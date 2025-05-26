@@ -1,0 +1,393 @@
+name: Release Features
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      features:
+        description: "Comma-separated list of features to publish (leave empty for all changed features)"
+        required: false
+        type: string
+      force:
+        description: "Force publish even if version has not changed"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: ${{ github.repository_owner }}/devcontainer-features
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect-features:
+    runs-on: ubuntu-latest
+    outputs:
+      features: ${{ steps.detect.outputs.features }}
+      features_json: ${{ steps.detect.outputs.features_json }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect features to publish
+        id: detect
+        run: |
+          if [ -n "${{ github.event.inputs.features }}" ]; then
+            # Manual workflow dispatch with specific features
+            FEATURES="${{ github.event.inputs.features }}"
+            echo "Publishing manually specified features: $FEATURES"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Tag push - detect changed features since last tag
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+            if [ -n "$LAST_TAG" ]; then
+              CHANGED_FILES=$(git diff --name-only $LAST_TAG HEAD)
+            else
+              CHANGED_FILES=$(git ls-files)
+            fi
+            
+            echo "Changed files since $LAST_TAG:"
+            echo "$CHANGED_FILES"
+            
+            # Extract unique feature names
+            FEATURES=$(echo "$CHANGED_FILES" | grep -E '^src/[^/]+/' | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+            
+            if [ -z "$FEATURES" ]; then
+              echo "No features changed, publishing all features"
+              FEATURES=$(ls src/ | tr '\n' ' ')
+            fi
+          else
+            # Fallback - publish all features
+            FEATURES=$(ls src/ | tr '\n' ' ')
+          fi
+
+                    # Clean up feature list
+          FEATURES=$(echo "$FEATURES" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          # Create JSON array using a more reliable method
+          if [ -n "$FEATURES" ]; then
+            # Convert space-separated list to JSON array
+            FEATURES_ARRAY="["
+            FIRST=true
+            for feature in $FEATURES; do
+              if [ -n "$feature" ]; then
+                if [ "$FIRST" = true ]; then
+                  FEATURES_ARRAY="${FEATURES_ARRAY}\"$feature\""
+                  FIRST=false
+                else
+                  FEATURES_ARRAY="${FEATURES_ARRAY},\"$feature\""
+                fi
+              fi
+            done
+            FEATURES_ARRAY="${FEATURES_ARRAY}]"
+          else
+            FEATURES_ARRAY="[]"
+          fi
+
+          # Validate JSON format
+          if ! echo "$FEATURES_ARRAY" | jq empty 2>/dev/null; then
+            echo "ERROR: Invalid JSON format in features array: $FEATURES_ARRAY"
+            exit 1
+          fi
+
+          echo "Features to publish: $FEATURES"
+          echo "Features JSON array: $FEATURES_ARRAY"
+          echo "features=$FEATURES" >> $GITHUB_OUTPUT
+          echo "features_json=$FEATURES_ARRAY" >> $GITHUB_OUTPUT
+
+  validate-features:
+    runs-on: ubuntu-latest
+    needs: detect-features
+    if: needs.detect-features.outputs.features != ''
+    strategy:
+      matrix:
+        feature: ${{ fromJson(needs.detect-features.outputs.features_json) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate feature
+        run: |
+          chmod +x scripts/validate-feature.sh
+          ./scripts/validate-feature.sh ${{ matrix.feature }}
+
+      - name: Check version increment
+        if: github.event.inputs.force != 'true'
+        run: |
+          FEATURE_VERSION=$(jq -r '.version' src/${{ matrix.feature }}/devcontainer-feature.json)
+          echo "Feature version: $FEATURE_VERSION"
+
+          # Check if this version already exists in the registry
+          # Note: This would require authentication and registry API calls
+          # For now, we'll just validate the version format
+          if ! echo "$FEATURE_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "ERROR: Version '$FEATURE_VERSION' does not follow semantic versioning"
+            exit 1
+          fi
+
+          echo "Version validation passed"
+
+  test-features:
+    runs-on: ubuntu-latest
+    needs: [detect-features, validate-features]
+    if: needs.detect-features.outputs.features != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        feature: ${{ fromJson(needs.detect-features.outputs.features_json) }}
+        base-image:
+          - "mcr.microsoft.com/devcontainers/base:ubuntu"
+          - "mcr.microsoft.com/devcontainers/base:debian"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Test feature
+        run: |
+          chmod +x scripts/test-feature.sh
+          ./scripts/test-feature.sh ${{ matrix.feature }} "${{ matrix.base-image }}"
+
+  build-and-publish:
+    runs-on: ubuntu-latest
+    needs: [detect-features, validate-features, test-features]
+    if: needs.detect-features.outputs.features != ''
+    strategy:
+      matrix:
+        feature: ${{ fromJson(needs.detect-features.outputs.features_json) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract feature metadata
+        id: meta
+        run: |
+          FEATURE_ID=$(jq -r '.id' src/${{ matrix.feature }}/devcontainer-feature.json)
+          FEATURE_VERSION=$(jq -r '.version' src/${{ matrix.feature }}/devcontainer-feature.json)
+          FEATURE_NAME=$(jq -r '.name' src/${{ matrix.feature }}/devcontainer-feature.json)
+
+          echo "id=$FEATURE_ID" >> $GITHUB_OUTPUT
+          echo "version=$FEATURE_VERSION" >> $GITHUB_OUTPUT
+          echo "name=$FEATURE_NAME" >> $GITHUB_OUTPUT
+
+          echo "Publishing feature: $FEATURE_ID v$FEATURE_VERSION"
+
+      - name: Build feature package
+        run: |
+          chmod +x scripts/build-feature.sh
+          ./scripts/build-feature.sh ${{ matrix.feature }}
+
+      - name: Publish to registry
+        run: |
+          # Use devcontainer CLI to publish the feature
+          devcontainer features publish \
+            --namespace "${{ env.NAMESPACE }}" \
+            --registry "${{ env.REGISTRY }}" \
+            src/${{ matrix.feature }}
+
+      - name: Create release notes
+        run: |
+          mkdir -p release-notes
+          cat > release-notes/${{ matrix.feature }}.md << EOF
+          # ${{ steps.meta.outputs.name }} v${{ steps.meta.outputs.version }}
+
+          **Feature ID:** \`${{ steps.meta.outputs.id }}\`
+          **Registry:** \`${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ steps.meta.outputs.id }}:${{ steps.meta.outputs.version }}\`
+
+          ## Usage
+
+          \`\`\`json
+          {
+            "features": {
+              "${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ steps.meta.outputs.id }}:${{ steps.meta.outputs.version }}": {}
+            }
+          }
+          \`\`\`
+
+          ## Changes
+
+          See the feature's README.md for detailed information about this release.
+          EOF
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ matrix.feature }}
+          path: release-notes/
+          retention-days: 30
+
+  update-collection:
+    runs-on: ubuntu-latest
+    needs: [detect-features, build-and-publish]
+    if: needs.detect-features.outputs.features != ''
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Generate collection metadata
+        run: |
+          # Create devcontainer-collection.json
+          echo "Generating collection metadata..."
+
+          COLLECTION_FILE="devcontainer-collection.json"
+
+          # Start with basic structure
+          cat > "$COLLECTION_FILE" << 'EOF'
+          {
+            "sourceInformation": {
+              "source": "github",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}",
+              "timestamp": "${{ github.event.head_commit.timestamp }}"
+            },
+            "features": []
+          }
+          EOF
+
+          # Add each feature to the collection
+          for feature_dir in src/*/; do
+            if [ -f "$feature_dir/devcontainer-feature.json" ]; then
+              feature_name=$(basename "$feature_dir")
+              echo "Adding feature: $feature_name"
+              
+              # Read feature metadata and add to collection
+              FEATURE_JSON=$(cat "$feature_dir/devcontainer-feature.json")
+              UPDATED_COLLECTION=$(jq --argjson feature "$FEATURE_JSON" '.features += [$feature]' "$COLLECTION_FILE")
+              echo "$UPDATED_COLLECTION" > "$COLLECTION_FILE"
+            fi
+          done
+
+          echo "Collection metadata generated:"
+          cat "$COLLECTION_FILE"
+
+      - name: Publish collection metadata
+        run: |
+          # This would typically publish the collection metadata to the registry
+          # For now, we'll just show what would be done
+          echo "Collection metadata would be published to: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}:latest"
+          echo "File: devcontainer-collection.json"
+
+  create-github-release:
+    runs-on: ubuntu-latest
+    needs: [detect-features, build-and-publish, update-collection]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-notes-*
+          merge-multiple: true
+          path: release-notes/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          RELEASE_NOTES="release-notes.md"
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+
+          echo "# Dev Container Features Release $TAG_NAME" > "$RELEASE_NOTES"
+          echo "" >> "$RELEASE_NOTES"
+          echo "This release includes updates to the following features:" >> "$RELEASE_NOTES"
+          echo "" >> "$RELEASE_NOTES"
+
+          # Combine all feature release notes
+          for notes_file in release-notes/*.md; do
+            if [ -f "$notes_file" ]; then
+              echo "---" >> "$RELEASE_NOTES"
+              echo "" >> "$RELEASE_NOTES"
+              cat "$notes_file" >> "$RELEASE_NOTES"
+              echo "" >> "$RELEASE_NOTES"
+            fi
+          done
+
+          echo "## Registry Information" >> "$RELEASE_NOTES"
+          echo "" >> "$RELEASE_NOTES"
+          echo "All features are published to: \`${{ env.REGISTRY }}/${{ env.NAMESPACE }}\`" >> "$RELEASE_NOTES"
+          echo "" >> "$RELEASE_NOTES"
+          echo "## Installation" >> "$RELEASE_NOTES"
+          echo "" >> "$RELEASE_NOTES"
+          echo "Add features to your \`devcontainer.json\`:" >> "$RELEASE_NOTES"
+          echo "" >> "$RELEASE_NOTES"
+          echo "\`\`\`json" >> "$RELEASE_NOTES"
+          echo "{" >> "$RELEASE_NOTES"
+          echo "  \"features\": {" >> "$RELEASE_NOTES"
+          echo "    \"${{ env.REGISTRY }}/${{ env.NAMESPACE }}/feature-name:version\": {}" >> "$RELEASE_NOTES"
+          echo "  }" >> "$RELEASE_NOTES"
+          echo "}" >> "$RELEASE_NOTES"
+          echo "\`\`\`" >> "$RELEASE_NOTES"
+
+          echo "release_notes_file=$RELEASE_NOTES" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Dev Container Features ${{ github.ref_name }}
+          body_path: ${{ steps.release_notes.outputs.release_notes_file }}
+          draft: false
+          prerelease: false
+
+  notify-success:
+    runs-on: ubuntu-latest
+    needs: [detect-features, build-and-publish, update-collection]
+    if: success()
+
+    steps:
+      - name: Success notification
+        run: |
+          echo "## 🎉 Release Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Published Features" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.detect-features.outputs.features }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Registry" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ env.REGISTRY }}/${{ env.NAMESPACE }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All features have been successfully published and are now available for use!"

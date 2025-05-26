@@ -1,0 +1,30 @@
+{
+  "id": "hello-world",
+  "version": "1.0.0",
+  "name": "Hello World",
+  "description": "A simple feature that installs a hello-world command to demonstrate basic dev container feature concepts",
+  "documentationURL": "https://github.com/devcontainer-features/tree/main/src/hello-world",
+  "keywords": ["example", "demo", "hello-world"],
+  "options": {
+    "greeting": {
+      "type": "string",
+      "proposals": ["Hello", "Hi", "Hey", "Greetings"],
+      "default": "Hello",
+      "description": "The greeting to use in the hello-world command"
+    },
+    "name": {
+      "type": "string",
+      "default": "World",
+      "description": "The name to greet in the hello-world command"
+    },
+    "includeDate": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to include the current date in the greeting"
+    }
+  },
+  "containerEnv": {
+    "HELLO_WORLD_INSTALLED": "true"
+  },
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
+}

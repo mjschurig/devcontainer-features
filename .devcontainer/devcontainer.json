@@ -1,0 +1,54 @@
+{
+  "name": "Dev Container Features Development",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-docker",
+        "streetsidesoftware.code-spell-checker",
+        "ms-vscode.vscode-bash-debug",
+        "timonwong.shellcheck"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n",
+        "files.insertFinalNewline": true,
+        "files.trimTrailingWhitespace": true
+      }
+    }
+  },
+
+  "containerEnv": {
+    "DOCKER_BUILDKIT": "1"
+  },
+
+  "mounts": [
+    "source=devcontainer-features-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+
+  "postCreateCommand": "npm install -g @devcontainers/cli && chmod +x scripts/*.sh && ./scripts/setup-global-commands.sh",
+
+  "forwardPorts": [],
+
+  "remoteUser": "vscode"
+}
