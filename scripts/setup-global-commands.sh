@@ -41,7 +41,6 @@ create_wrapper "test-feature.sh" "test-feature"
 create_wrapper "build-feature.sh" "build-feature"
 create_wrapper "validate-feature.sh" "validate-feature"
 create_wrapper "test-all.sh" "test-all"
-create_wrapper "test-feature-scenarios.sh" "test-feature-scenarios"
 
 echo ""
 echo "✅ Global commands setup complete!"

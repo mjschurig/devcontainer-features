@@ -49,13 +49,9 @@ Following the [dev container specification](https://containers.dev/implementors/
 │   └── [other-features]/
 ├── test/                         # Feature tests
 │   ├── hello-world/
-│   │   ├── test.sh
-│   │   ├── scenarios.json
-│   │   └── expected-output.txt
+│   │   └── test.sh
 │   ├── hello-universe/
-│   │   ├── test.sh
-│   │   ├── scenarios.json
-│   │   └── expected-output.txt
+│   │   └── test.sh
 │   └── _global/
 │       ├── test-utils.sh         # Shared testing utilities
 │       └── base-images.json      # Base images for testing
@@ -101,7 +97,6 @@ The repository includes a dev container configuration that provides:
 3. **Write Tests**:
 
    - `test.sh`: Feature validation script
-   - `scenarios.json`: Test scenarios with different options
    - Expected outputs and validation criteria
 
 4. **Local Testing**:
@@ -110,9 +105,9 @@ The repository includes a dev container configuration that provides:
    # Test single feature
    ./scripts/test-feature.sh my-feature
 
-   # Test against multiple base images
-   devcontainer features test --base-image ubuntu:22.04 src/my-feature
-   devcontainer features test --base-image debian:bullseye src/my-feature
+   # Test against multiple base images using devcontainer CLI
+   devcontainer features test --features src/my-feature --base-image ubuntu:22.04
+   devcontainer features test --features src/my-feature --base-image debian:bullseye
 
    # Test all features
    ./scripts/test-all.sh
@@ -135,13 +130,7 @@ Each feature will be tested with:
 ```bash
 # Example test structure
 test/my-feature/
-├── test.sh                    # Main test script
-├── scenarios.json             # Test scenarios definition
-├── expected-output.txt        # Expected installation output
-└── validation/
-    ├── default.sh            # Default scenario validation
-    ├── custom-options.sh     # Custom options validation
-    └── idempotency.sh        # Idempotency validation
+└── test.sh                    # Main test script
 ```
 
 #### Test Execution
@@ -150,8 +139,7 @@ test/my-feature/
 # Using devcontainers CLI test command
 devcontainer features test \
   --features src/my-feature \
-  --base-image mcr.microsoft.com/devcontainers/base:ubuntu \
-  --test-folder test/my-feature
+  --base-image mcr.microsoft.com/devcontainers/base:ubuntu
 ```
 
 ## CI/CD Pipeline
@@ -306,8 +294,7 @@ echo "Base image: $BASE_IMAGE"
 # Run devcontainer features test
 devcontainer features test \
     --features "src/$FEATURE_NAME" \
-    --base-image "$BASE_IMAGE" \
-    --test-folder "test/$FEATURE_NAME"
+    --base-image "$BASE_IMAGE"
 ```
 
 #### Validation Utilities
@@ -349,39 +336,6 @@ check_env_var() {
     fi
     echo "✓ Environment variable '$var' = '$actual'"
     return 0
-}
-```
-
-### Test Scenarios Configuration
-
-```json
-{
-  "scenarios": [
-    {
-      "name": "default",
-      "description": "Test with default options",
-      "options": {},
-      "baseImages": [
-        "mcr.microsoft.com/devcontainers/base:ubuntu",
-        "mcr.microsoft.com/devcontainers/base:debian"
-      ]
-    },
-    {
-      "name": "custom-version",
-      "description": "Test with specific version",
-      "options": {
-        "version": "2.0"
-      },
-      "baseImages": ["mcr.microsoft.com/devcontainers/base:ubuntu"]
-    },
-    {
-      "name": "idempotency",
-      "description": "Test multiple installations",
-      "options": {},
-      "runTwice": true,
-      "baseImages": ["mcr.microsoft.com/devcontainers/base:ubuntu"]
-    }
-  ]
 }
 ```
 

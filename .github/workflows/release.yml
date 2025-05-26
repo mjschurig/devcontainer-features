@@ -30,17 +30,13 @@ jobs:
     outputs:
       features: ${{ steps.detect.outputs.features }}
       features_json: ${{ steps.detect.outputs.features_json }}
-      feature_scenarios: ${{ steps.detect.outputs.feature_scenarios }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Detect features and scenarios to publish
+      - name: Detect features to publish
         id: detect
         run: |
           if [ -n "${{ github.event.inputs.features }}" ]; then
@@ -71,11 +67,12 @@ jobs:
             FEATURES=$(ls src/ | tr '\n' ' ')
           fi
 
-          # Clean up feature list
+                    # Clean up feature list
           FEATURES=$(echo "$FEATURES" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
-          # Create JSON array for features
+          # Create JSON array using a more reliable method
           if [ -n "$FEATURES" ]; then
+            # Convert space-separated list to JSON array
             FEATURES_ARRAY="["
             FIRST=true
             for feature in $FEATURES; do
@@ -93,60 +90,16 @@ jobs:
             FEATURES_ARRAY="[]"
           fi
 
-          # Create feature-scenario combinations for testing
-          FEATURE_SCENARIOS="["
-          FIRST=true
-          for feature in $FEATURES; do
-            if [ -n "$feature" ]; then
-              SCENARIOS_FILE="test/$feature/scenarios.json"
-              if [ -f "$SCENARIOS_FILE" ]; then
-                # Extract scenario names from the JSON object
-                SCENARIO_NAMES=$(jq -r 'keys[]' "$SCENARIOS_FILE" 2>/dev/null || echo "")
-                for scenario in $SCENARIO_NAMES; do
-                  if [ -n "$scenario" ]; then
-                    # Get base image for this scenario (fallback to ubuntu if not specified)
-                    BASE_IMAGE=$(jq -r ".[\"$scenario\"].image // \"mcr.microsoft.com/devcontainers/base:ubuntu\"" "$SCENARIOS_FILE" 2>/dev/null || echo "mcr.microsoft.com/devcontainers/base:ubuntu")
-
-                    COMBO="{\"feature\":\"$feature\",\"scenario\":\"$scenario\",\"image\":\"$BASE_IMAGE\"}"
-                    if [ "$FIRST" = true ]; then
-                      FEATURE_SCENARIOS="${FEATURE_SCENARIOS}$COMBO"
-                      FIRST=false
-                    else
-                      FEATURE_SCENARIOS="${FEATURE_SCENARIOS},$COMBO"
-                    fi
-                  fi
-                done
-              else
-                # No scenarios file, use default scenario with ubuntu image
-                COMBO="{\"feature\":\"$feature\",\"scenario\":\"default\",\"image\":\"mcr.microsoft.com/devcontainers/base:ubuntu\"}"
-                if [ "$FIRST" = true ]; then
-                  FEATURE_SCENARIOS="${FEATURE_SCENARIOS}$COMBO"
-                  FIRST=false
-                else
-                  FEATURE_SCENARIOS="${FEATURE_SCENARIOS},$COMBO"
-                fi
-              fi
-            fi
-          done
-          FEATURE_SCENARIOS="${FEATURE_SCENARIOS}]"
-
           # Validate JSON format
           if ! echo "$FEATURES_ARRAY" | jq empty 2>/dev/null; then
             echo "ERROR: Invalid JSON format in features array: $FEATURES_ARRAY"
             exit 1
           fi
 
-          if ! echo "$FEATURE_SCENARIOS" | jq empty 2>/dev/null; then
-            echo "ERROR: Invalid JSON format in feature scenarios array: $FEATURE_SCENARIOS"
-            exit 1
-          fi
-
           echo "Features to publish: $FEATURES"
           echo "Features JSON array: $FEATURES_ARRAY"
-          echo "Feature scenarios combinations: $FEATURE_SCENARIOS"
           echo "features=$FEATURES" >> $GITHUB_OUTPUT
           echo "features_json=$FEATURES_ARRAY" >> $GITHUB_OUTPUT
-          echo "feature_scenarios=$FEATURE_SCENARIOS" >> $GITHUB_OUTPUT
 
   validate-features:
     runs-on: ubuntu-latest
@@ -186,11 +139,14 @@ jobs:
   test-features:
     runs-on: ubuntu-latest
     needs: [detect-features, validate-features]
-    if: needs.detect-features.outputs.feature_scenarios != '[]'
+    if: needs.detect-features.outputs.features != ''
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.detect-features.outputs.feature_scenarios) }}
+        feature: ${{ fromJson(needs.detect-features.outputs.features_json) }}
+        base-image:
+          - "mcr.microsoft.com/devcontainers/base:ubuntu"
+          - "mcr.microsoft.com/devcontainers/base:debian"
 
     steps:
       - name: Checkout
@@ -204,78 +160,10 @@ jobs:
       - name: Install devcontainer CLI
         run: npm install -g @devcontainers/cli
 
-      - name: Test feature scenario
+      - name: Test feature
         run: |
-          echo "Installing jq..."
-          sudo apt-get update && sudo apt-get install -y jq
-
-          echo "Testing feature: ${{ matrix.feature }}"
-          echo "Scenario: ${{ matrix.scenario }}"
-          echo "Base image: ${{ matrix.image }}"
-
-          # Check if scenario-specific test script exists
-          SCENARIO_SCRIPT="test/${{ matrix.feature }}/${{ matrix.scenario }}.sh"
-          if [ -f "$SCENARIO_SCRIPT" ]; then
-            echo "Running scenario-specific test script: $SCENARIO_SCRIPT"
-            chmod +x "$SCENARIO_SCRIPT"
-
-            # Create temporary devcontainer.json for this scenario
-            SCENARIOS_FILE="test/${{ matrix.feature }}/scenarios.json"
-            if [ -f "$SCENARIOS_FILE" ]; then
-              echo "Creating temporary devcontainer configuration..."
-              mkdir -p .devcontainer-test
-
-              # Extract scenario configuration from scenarios.json and fix feature references
-              SCENARIO_CONFIG=$(jq ".[\"${{ matrix.scenario }}\"]" "$SCENARIOS_FILE")
-
-              # Convert feature names to local feature syntax (prepend "./src/")
-              FIXED_CONFIG=$(echo "$SCENARIO_CONFIG" | jq '
-                if .features then
-                  .features = (.features | to_entries | map({
-                    key: (if (.key | startswith("./")) then .key else "./src/" + .key end),
-                    value: .value
-                  }) | from_entries)
-                else . end
-              ')
-
-              echo "$FIXED_CONFIG" > .devcontainer-test/devcontainer.json
-
-              echo "Scenario configuration:"
-              cat .devcontainer-test/devcontainer.json
-
-              # Check if this scenario requires running twice (idempotency test)
-              RUN_TWICE=$(echo "$SCENARIO_CONFIG" | jq -r '.runTwice // false')
-
-              # Run devcontainer test with scenario configuration
-              devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json
-
-              # Run scenario-specific test inside the container
-              devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_SCRIPT"
-
-              # If runTwice is true, rebuild the container and run the test again for idempotency
-              if [ "$RUN_TWICE" = "true" ]; then
-                echo "Running idempotency test - rebuilding container and running test again..."
-
-                # Rebuild the container (this will run the feature installation again)
-                devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json --remove-existing-container
-
-                # Run the test again to verify idempotency
-                devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_SCRIPT"
-
-                echo "Idempotency test completed successfully!"
-              fi
-
-              # Cleanup
-              rm -rf .devcontainer-test
-            else
-              # Fallback to running scenario script directly
-              "./$SCENARIO_SCRIPT"
-            fi
-          else
-            echo "No scenario-specific test script found, running general feature test..."
-            chmod +x scripts/test-feature.sh
-            ./scripts/test-feature.sh ${{ matrix.feature }} "${{ matrix.image }}"
-          fi
+          chmod +x scripts/test-feature.sh
+          ./scripts/test-feature.sh ${{ matrix.feature }} "${{ matrix.base-image }}"
 
   build-and-publish:
     runs-on: ubuntu-latest

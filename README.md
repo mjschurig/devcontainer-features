@@ -162,10 +162,10 @@ test-all
 
 ### Testing
 
-The repository includes comprehensive testing:
+The repository includes comprehensive testing using the official devcontainer CLI:
 
 - **Structure Validation**: JSON schema validation, file presence checks
-- **Unit Testing**: Individual feature functionality
+- **Unit Testing**: Individual feature functionality using `devcontainer features test`
 - **Integration Testing**: Features against multiple base images
 - **Idempotency Testing**: Safe re-installation
 - **Security Scanning**: ShellCheck, secret detection
@@ -173,25 +173,24 @@ The repository includes comprehensive testing:
 Run tests locally:
 
 ```bash
-# Using global commands (recommended)
-# Test specific feature against specific base image
+# Using devcontainer CLI directly (official method)
+devcontainer features test --features src/hello-world --base-image mcr.microsoft.com/devcontainers/base:ubuntu
+devcontainer features test --features src/hello-world --base-image mcr.microsoft.com/devcontainers/base:debian
+
+# Using wrapper scripts for convenience
+test-feature hello-world
 test-feature hello-world mcr.microsoft.com/devcontainers/base:debian
 
-# Test all features in parallel
-BASE_IMAGES="ubuntu:22.04,debian:bullseye" test-all . true
+# Test all features
+test-all
+```
 
-# Test only specific features
-FEATURES="hello-world" test-all
-
-# Or using scripts directly
-# Test specific feature against specific base image
-./scripts/test-feature.sh hello-world mcr.microsoft.com/devcontainers/base:debian
-
-# Test all features in parallel
-BASE_IMAGES="ubuntu:22.04,debian:bullseye" ./scripts/test-all.sh . true
-
-# Test only specific features
-FEATURES="hello-world" ./scripts/test-all.sh
+**Testing with Multiple Base Images**:
+```bash
+# Test against different base images
+devcontainer features test --features src/hello-world --base-image ubuntu:22.04
+devcontainer features test --features src/hello-world --base-image debian:bullseye
+devcontainer features test --features src/hello-world --base-image mcr.microsoft.com/devcontainers/base:alpine
 ```
 
 ## 🚀 CI/CD
@@ -201,7 +200,7 @@ FEATURES="hello-world" ./scripts/test-all.sh
 Every pull request triggers:
 
 - Feature structure validation
-- Multi-platform testing
+- Multi-platform testing using `devcontainer features test`
 - Security scanning
 - Build verification
 
@@ -245,7 +244,7 @@ All features must:
 - ✅ Include `README.md` with usage documentation
 - ✅ Support both root and non-root users
 - ✅ Handle platform detection and compatibility
-- ✅ Include comprehensive tests
+- ✅ Include comprehensive tests using `test.sh`
 - ✅ Follow semantic versioning
 
 ## 🔧 Best Practices
@@ -256,7 +255,7 @@ All features must:
 - **Platform Support**: Detect and handle different base images
 - **Error Handling**: Provide clear error messages
 - **Documentation**: Include usage examples and option descriptions
-- **Testing**: Cover all major functionality and edge cases
+- **Testing**: Use `devcontainer features test` for validation
 
 ### Security
 
@@ -264,6 +263,13 @@ All features must:
 - **Privilege Management**: Minimize root operations
 - **Dependency Verification**: Verify package checksums
 - **Secret Management**: Never hardcode secrets
+
+### Testing Best Practices
+
+- **Use Official CLI**: Test features using `devcontainer features test`
+- **Multiple Base Images**: Test against Ubuntu, Debian, Alpine
+- **Idempotency**: Ensure features can be safely re-run
+- **Error Scenarios**: Test invalid inputs and edge cases
 
 ## 📊 Status
 

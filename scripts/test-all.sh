@@ -133,9 +133,9 @@ run_test() {
     local feature=$1
     local image=$2
     local test_name="$feature-$image"
-    
+
     echo "Testing $feature against $image..."
-    
+
     if "$WORKSPACE_DIR/scripts/test-feature.sh" "$feature" "$image" "$WORKSPACE_DIR"; then
         echo "✅ $test_name: PASSED"
         return 0
@@ -155,18 +155,18 @@ FAILED_TESTS=0
 if [ "$PARALLEL" = "true" ]; then
     echo "Running tests in parallel..."
     echo ""
-    
+
     # Create temporary directory for results
     TEMP_DIR=$(mktemp -d)
     trap "rm -rf $TEMP_DIR" EXIT
-    
+
     # Start all tests in background
     for feature in "${FEATURE_LIST[@]}"; do
         for image in "${IMAGES[@]}"; do
             TOTAL_TESTS=$((TOTAL_TESTS + 1))
             test_name="$feature-$(echo "$image" | tr '/' '-' | tr ':' '-')"
             result_file="$TEMP_DIR/$test_name.result"
-            
+
             (
                 if run_test "$feature" "$image" > "$result_file.log" 2>&1; then
                     echo "PASSED" > "$result_file"
@@ -176,17 +176,17 @@ if [ "$PARALLEL" = "true" ]; then
             ) &
         done
     done
-    
+
     # Wait for all tests to complete
     wait
-    
+
     # Collect results
     for feature in "${FEATURE_LIST[@]}"; do
         for image in "${IMAGES[@]}"; do
             test_name="$feature-$(echo "$image" | tr '/' '-' | tr ':' '-')"
             result_file="$TEMP_DIR/$test_name.result"
             log_file="$TEMP_DIR/$test_name.result.log"
-            
+
             if [ -f "$result_file" ]; then
                 result=$(cat "$result_file")
                 if [ "$result" = "PASSED" ]; then
@@ -211,13 +211,13 @@ if [ "$PARALLEL" = "true" ]; then
 else
     echo "Running tests sequentially..."
     echo ""
-    
+
     for feature in "${FEATURE_LIST[@]}"; do
         for image in "${IMAGES[@]}"; do
             TOTAL_TESTS=$((TOTAL_TESTS + 1))
-            
+
             echo "=== Test $TOTAL_TESTS: $feature against $image ==="
-            
+
             if run_test "$feature" "$image"; then
                 PASSED_TESTS=$((PASSED_TESTS + 1))
                 RESULTS+=("$feature|$image|PASSED")
@@ -225,7 +225,7 @@ else
                 FAILED_TESTS=$((FAILED_TESTS + 1))
                 RESULTS+=("$feature|$image|FAILED")
             fi
-            
+
             echo ""
         done
     done
@@ -253,4 +253,4 @@ else
         fi
     done
     exit 1
-fi 
+fi
