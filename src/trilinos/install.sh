@@ -425,10 +425,29 @@ EOF
 chmod +x "$ENV_SCRIPT"
 
 # Source the environment script in common shell initialization files
+# Add to /etc/bash.bashrc (for interactive bash shells)
 echo "# Trilinos environment" >> /etc/bash.bashrc
 echo "if [ -f \"$ENV_SCRIPT\" ]; then" >> /etc/bash.bashrc
 echo "    source \"$ENV_SCRIPT\"" >> /etc/bash.bashrc
 echo "fi" >> /etc/bash.bashrc
+
+# Also add to /etc/profile.d/ for broader compatibility (works for all POSIX shells)
+mkdir -p /etc/profile.d
+cat > /etc/profile.d/trilinos.sh << EOF
+#!/bin/sh
+# Trilinos environment setup for all shells
+if [ -f "$ENV_SCRIPT" ]; then
+    . "$ENV_SCRIPT"
+fi
+EOF
+chmod +x /etc/profile.d/trilinos.sh
+
+# Add to /etc/environment for system-wide environment variables (Debian/Ubuntu)
+if [ -f /etc/environment ]; then
+    # Remove any existing TRILINOS_DIR entry
+    sed -i '/^TRILINOS_DIR=/d' /etc/environment
+    echo "TRILINOS_DIR=\"$INSTALLPREFIX\"" >> /etc/environment
+fi
 
 # Create a simple test program
 TEST_PROGRAM_DIR="$INSTALLPREFIX/share/trilinos/test"

@@ -240,26 +240,67 @@ jobs:
           # The devcontainer features test command is designed for testing local features
           # It handles the path restrictions properly and can run test scripts
 
+          # Install jq for JSON parsing
+          sudo apt-get update && sudo apt-get install -y jq
+
           # Check if there's a scenario-specific test script
           SCENARIO_TEST_SCRIPT="test/${{ matrix.feature }}/${{ matrix.scenario }}.sh"
           if [ -f "$SCENARIO_TEST_SCRIPT" ]; then
             echo "Found scenario test script: $SCENARIO_TEST_SCRIPT"
-            # Make it executable
             chmod +x "$SCENARIO_TEST_SCRIPT"
 
-            # For non-default scenarios with test scripts, we need to handle them specially
-            # since devcontainer features test doesn't directly support scenario scripts
-            if [ "${{ matrix.scenario }}" != "default" ]; then
-              # Run the test script which should handle its own testing
-              echo "Running scenario-specific test script..."
-              "$SCENARIO_TEST_SCRIPT"
+            # Create temporary devcontainer.json for this scenario
+            SCENARIOS_FILE="test/${{ matrix.feature }}/scenarios.json"
+            if [ -f "$SCENARIOS_FILE" ]; then
+              echo "Creating temporary devcontainer configuration..."
+              mkdir -p .devcontainer-test
+
+              # Extract scenario configuration from scenarios.json and fix feature references
+              SCENARIO_CONFIG=$(jq ".[\"${{ matrix.scenario }}\"]" "$SCENARIOS_FILE")
+
+              # Convert feature names to local feature syntax (prepend "./src/")
+              FIXED_CONFIG=$(echo "$SCENARIO_CONFIG" | jq '
+                if .features then
+                  .features = (.features | to_entries | map({
+                    key: (if (.key | startswith("./")) then .key else "./src/" + .key end),
+                    value: .value
+                  }) | from_entries)
+                else . end
+              ')
+
+              echo "$FIXED_CONFIG" > .devcontainer-test/devcontainer.json
+
+              echo "Scenario configuration:"
+              cat .devcontainer-test/devcontainer.json
+
+              # Check if this scenario requires running twice (idempotency test)
+              RUN_TWICE=$(echo "$SCENARIO_CONFIG" | jq -r '.runTwice // false')
+
+              # Run devcontainer test with scenario configuration
+              devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json
+
+              # Run scenario-specific test inside the container
+              devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_TEST_SCRIPT"
+
+              # If runTwice is true, rebuild the container and run the test again for idempotency
+              if [ "$RUN_TWICE" = "true" ]; then
+                echo "Running idempotency test - rebuilding container and running test again..."
+
+                # Rebuild the container (this will run the feature installation again)
+                devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json --remove-existing-container
+
+                # Run the test again to verify idempotency
+                devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_TEST_SCRIPT"
+
+                echo "Idempotency test completed successfully!"
+              fi
+
+              # Cleanup
+              rm -rf .devcontainer-test
             else
-              # For default scenario, use devcontainer features test
-              echo "Running devcontainer features test..."
-              devcontainer features test \
-                --project-folder . \
-                --features "${{ matrix.feature }}" \
-                --base-image "${{ matrix.image }}"
+              # Fallback: run scenario script directly (for scenarios without scenarios.json)
+              echo "No scenarios.json found, running scenario script directly..."
+              "$SCENARIO_TEST_SCRIPT"
             fi
           else
             # No scenario test script, use devcontainer features test

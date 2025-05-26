@@ -243,11 +243,27 @@ jobs:
               echo "Scenario configuration:"
               cat .devcontainer-test/devcontainer.json
 
+              # Check if this scenario requires running twice (idempotency test)
+              RUN_TWICE=$(echo "$SCENARIO_CONFIG" | jq -r '.runTwice // false')
+
               # Run devcontainer test with scenario configuration
               devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json
 
               # Run scenario-specific test inside the container
               devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_SCRIPT"
+
+              # If runTwice is true, rebuild the container and run the test again for idempotency
+              if [ "$RUN_TWICE" = "true" ]; then
+                echo "Running idempotency test - rebuilding container and running test again..."
+
+                # Rebuild the container (this will run the feature installation again)
+                devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json --remove-existing-container
+
+                # Run the test again to verify idempotency
+                devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_SCRIPT"
+
+                echo "Idempotency test completed successfully!"
+              fi
 
               # Cleanup
               rm -rf .devcontainer-test

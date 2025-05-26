@@ -30,6 +30,10 @@ else
         echo -e "${RED}[ERROR]${NC} $1"
     }
 
+    log_warning() {
+        echo -e "${YELLOW}[WARNING]${NC} $1"
+    }
+
     check_command() {
         local cmd=$1
         local description=${2:-"Command '$cmd'"}
@@ -105,6 +109,50 @@ else
             return 1
         fi
     }
+fi
+
+# Check if TRILINOS_DIR is set, if not try to source the environment script
+if [ -z "$TRILINOS_DIR" ]; then
+    echo "TRILINOS_DIR not set, attempting to source Trilinos environment..."
+
+    # Try sourcing from /etc/environment (Debian/Ubuntu style)
+    if [ -f /etc/environment ]; then
+        # Source /etc/environment to get TRILINOS_DIR
+        set -a  # automatically export all variables
+        . /etc/environment
+        set +a  # turn off automatic export
+        if [ -n "$TRILINOS_DIR" ]; then
+            echo "Found TRILINOS_DIR in /etc/environment: $TRILINOS_DIR"
+        fi
+    fi
+
+    # Try sourcing from /etc/profile.d/trilinos.sh
+    if [ -z "$TRILINOS_DIR" ] && [ -f /etc/profile.d/trilinos.sh ]; then
+        echo "Sourcing /etc/profile.d/trilinos.sh..."
+        . /etc/profile.d/trilinos.sh
+    fi
+
+    # Try common installation prefixes
+    if [ -z "$TRILINOS_DIR" ]; then
+        for prefix in "/usr/local" "/opt/trilinos" "/usr"; do
+            ENV_SCRIPT="$prefix/bin/trilinos-env.sh"
+            if [ -f "$ENV_SCRIPT" ]; then
+                echo "Found Trilinos environment script at: $ENV_SCRIPT"
+                source "$ENV_SCRIPT"
+                break
+            fi
+        done
+    fi
+
+    # If still not set, check if we can find it anywhere
+    if [ -z "$TRILINOS_DIR" ]; then
+        echo "Searching for trilinos-env.sh..."
+        ENV_SCRIPT=$(find /usr -name "trilinos-env.sh" 2>/dev/null | head -1)
+        if [ -n "$ENV_SCRIPT" ] && [ -f "$ENV_SCRIPT" ]; then
+            echo "Found Trilinos environment script at: $ENV_SCRIPT"
+            source "$ENV_SCRIPT"
+        fi
+    fi
 fi
 
 echo "Testing Trilinos feature..."

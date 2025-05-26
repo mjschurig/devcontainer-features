@@ -80,9 +80,13 @@ if [ -z "$SCENARIO_NAMES" ]; then
 fi
 
 echo "Found scenarios:"
+TOTAL_SCENARIOS=0
 for scenario in $SCENARIO_NAMES; do
     echo "  - $scenario"
+    TOTAL_SCENARIOS=$((TOTAL_SCENARIOS + 1))
 done
+echo ""
+echo "Total scenarios to run: $TOTAL_SCENARIOS"
 echo ""
 
 # Create temporary directory for results
@@ -173,11 +177,53 @@ EOF
 
 # Start all scenarios in parallel
 echo "Running scenarios in parallel..."
+PIDS=()
 for scenario in $SCENARIO_NAMES; do
+    echo "  Starting scenario: $scenario"
     run_scenario "$scenario" &
+    PIDS+=($!)
 done
 
-# Wait for all scenarios to complete
+echo ""
+echo "All scenarios started. Waiting for completion..."
+echo "Progress: 0/$TOTAL_SCENARIOS scenarios completed"
+
+# Wait for scenarios to complete with progress updates
+COMPLETED=0
+while [ $COMPLETED -lt $TOTAL_SCENARIOS ]; do
+    sleep 2
+    NEW_COMPLETED=0
+
+    for scenario in $SCENARIO_NAMES; do
+        result_file="$TEMP_DIR/$scenario.result"
+        if [ -f "$result_file" ]; then
+            NEW_COMPLETED=$((NEW_COMPLETED + 1))
+        fi
+    done
+
+    if [ $NEW_COMPLETED -gt $COMPLETED ]; then
+        COMPLETED=$NEW_COMPLETED
+        echo "Progress: $COMPLETED/$TOTAL_SCENARIOS scenarios completed"
+
+        # Show which scenarios just completed
+        for scenario in $SCENARIO_NAMES; do
+            result_file="$TEMP_DIR/$scenario.result"
+            status_file="$TEMP_DIR/$scenario.status"
+
+            if [ -f "$result_file" ] && [ ! -f "$status_file" ]; then
+                result=$(cat "$result_file")
+                if [ "$result" = "PASSED" ]; then
+                    echo "  ✅ $scenario completed successfully"
+                else
+                    echo "  ❌ $scenario failed"
+                fi
+                touch "$status_file"  # Mark as reported
+            fi
+        done
+    fi
+done
+
+# Final wait to ensure all background processes are done
 wait
 
 # Collect and display results
@@ -185,12 +231,10 @@ echo ""
 echo "=== Scenario Test Results ==="
 echo ""
 
-TOTAL_SCENARIOS=0
 PASSED_SCENARIOS=0
 FAILED_SCENARIOS=0
 
 for scenario in $SCENARIO_NAMES; do
-    TOTAL_SCENARIOS=$((TOTAL_SCENARIOS + 1))
     result_file="$TEMP_DIR/$scenario.result"
     log_file="$TEMP_DIR/$scenario.log"
 
