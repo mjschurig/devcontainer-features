@@ -1,0 +1,252 @@
+{
+  "id": "deal-ii-candi",
+  "version": "1.0.0",
+  "name": "deal.II with candi",
+  "description": "Installs deal.II using candi (Compile & Install) with comprehensive package support including Trilinos, PETSc, p4est, HDF5, and more",
+  "documentationURL": "https://github.com/mjschurig/devcontainer-features/tree/main/src/deal-ii-candi",
+  "licenseURL": "https://github.com/dealii/candi/blob/master/LICENSE",
+  "keywords": [
+    "cpp",
+    "c++",
+    "finite-elements",
+    "fem",
+    "pde",
+    "numerical-analysis",
+    "scientific-computing",
+    "candi",
+    "trilinos",
+    "petsc",
+    "p4est",
+    "hdf5"
+  ],
+  "options": {
+    "dealiiVersion": {
+      "type": "string",
+      "proposals": [
+        "master",
+        "v9.6.1",
+        "v9.6.0",
+        "v9.5.2",
+        "v9.5.1",
+        "v9.5.0",
+        "v9.4.0",
+        "v9.3.0"
+      ],
+      "default": "v9.6.1",
+      "description": "Select the version of deal.II to install"
+    },
+    "installPath": {
+      "type": "string",
+      "default": "/usr/local/dealii-candi",
+      "description": "Installation path for deal.II and dependencies"
+    },
+    "buildJobs": {
+      "type": "string",
+      "default": "4",
+      "description": "Number of parallel build jobs"
+    },
+    "cleanBuild": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use fresh build directory by removing existing ones"
+    },
+    "nativeOptimizations": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable machine-specific optimizations (e.g. -march=native)"
+    },
+    "use64BitIndices": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable 64-bit indices for large computations"
+    },
+    "buildExamples": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable building of deal.II examples"
+    },
+    "runTests": {
+      "type": "boolean",
+      "default": false,
+      "description": "Run tests after installation"
+    },
+    "enableTrilinos": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install Trilinos for advanced linear algebra operations"
+    },
+    "trilinosMajorVersion": {
+      "type": "string",
+      "proposals": ["AUTO", "16", "15", "14", "13", "12"],
+      "default": "AUTO",
+      "description": "Trilinos major version to use"
+    },
+    "trilinosWithComplex": {
+      "type": "boolean",
+      "default": false,
+      "description": "Configure Trilinos with complex number support (requires more RAM and time)"
+    },
+    "enablePetsc": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install PETSc for parallel linear algebra"
+    },
+    "enableSlepc": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install SLEPc for eigenvalue problems (requires PETSc)"
+    },
+    "enableP4est": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install p4est for adaptive mesh refinement"
+    },
+    "enableHdf5": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install HDF5 for data I/O"
+    },
+    "enableOpencascade": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install OpenCASCADE for CAD file support"
+    },
+    "enableParmetis": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install ParMETIS for mesh partitioning"
+    },
+    "enableSundials": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install SUNDIALS for ODE/DAE solving"
+    },
+    "enableSymengine": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install SymEngine for symbolic computation"
+    },
+    "enableSuperluDist": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install SuperLU_DIST for distributed sparse direct solvers"
+    },
+    "enableAdolc": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install ADOL-C for automatic differentiation"
+    },
+    "enableArpackNg": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install ARPACK-NG for eigenvalue problems"
+    },
+    "enableAssimp": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Assimp for 3D model loading"
+    },
+    "enableGinkgo": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Ginkgo for GPU-accelerated linear algebra"
+    },
+    "enableGmsh": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Gmsh for mesh generation"
+    },
+    "enableGsl": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install GSL (GNU Scientific Library)"
+    },
+    "enableMumps": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install MUMPS for sparse direct solvers"
+    },
+    "enableNetcdf": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install NetCDF for scientific data I/O"
+    },
+    "enableOpenblas": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install OpenBLAS for optimized linear algebra"
+    },
+    "enableScalapack": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install ScaLAPACK for distributed linear algebra"
+    },
+    "enableZlib": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install zlib compression library"
+    },
+    "enableBzip2": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install bzip2 compression library"
+    },
+    "enableBoost": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Boost C++ libraries"
+    },
+    "enableMkl": {
+      "type": "boolean",
+      "default": false,
+      "description": "Use Intel MKL for BLAS/LAPACK"
+    },
+    "mklDir": {
+      "type": "string",
+      "default": "",
+      "description": "Path to Intel MKL installation (if enableMkl is true)"
+    },
+    "blasDir": {
+      "type": "string",
+      "default": "",
+      "description": "Path to custom BLAS installation"
+    },
+    "lapackDir": {
+      "type": "string",
+      "default": "",
+      "description": "Path to custom LAPACK installation"
+    },
+    "developerMode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable developer mode to avoid package fetch and unpack"
+    },
+    "instantCleanBuild": {
+      "type": "boolean",
+      "default": true,
+      "description": "Remove build directory after successful installation"
+    },
+    "instantCleanSrc": {
+      "type": "boolean",
+      "default": true,
+      "description": "Remove downloaded source files after successful installation"
+    },
+    "instantCleanUnpack": {
+      "type": "boolean",
+      "default": true,
+      "description": "Remove unpacked source files after successful installation"
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/devcontainers/features/common-utils": {}
+  },
+  "containerEnv": {
+    "DEAL_II_DIR": "/usr/local/dealii-candi",
+    "CMAKE_PREFIX_PATH": "/usr/local/dealii-candi:${CMAKE_PREFIX_PATH}",
+    "PATH": "/usr/local/dealii-candi/bin:${PATH}",
+    "LD_LIBRARY_PATH": "/usr/local/dealii-candi/lib:${LD_LIBRARY_PATH}",
+    "PKG_CONFIG_PATH": "/usr/local/dealii-candi/lib/pkgconfig:${PKG_CONFIG_PATH}"
+  },
+  "capAdd": [],
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
+}
