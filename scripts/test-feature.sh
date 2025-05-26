@@ -35,6 +35,14 @@ if [ -z "$FEATURE_NAME" ] || [ "$FEATURE_NAME" = "--help" ] || [ "$FEATURE_NAME"
     exit 0
 fi
 
+# Handle help flag in any position
+for arg in "$@"; do
+    if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+        show_help
+        exit 0
+    fi
+done
+
 # Validate feature exists
 FEATURE_DIR="$WORKSPACE_DIR/src/$FEATURE_NAME"
 if [ ! -d "$FEATURE_DIR" ]; then
@@ -73,12 +81,29 @@ TEST_DIR="$WORKSPACE_DIR/test/$FEATURE_NAME"
 if [ -d "$TEST_DIR" ]; then
     echo "Using test directory: $TEST_DIR"
     echo "Project folder: $WORKSPACE_DIR"
+
+    # Check for optional test files
+    SCENARIOS_FILE="$TEST_DIR/scenarios.json"
+    DUPLICATE_FILE="$TEST_DIR/duplicate.sh"
+
+    if [ -f "$SCENARIOS_FILE" ]; then
+        echo "Found scenarios.json - will test multiple scenarios"
+    else
+        echo "No scenarios.json found - will test default scenario only"
+    fi
+
+    if [ -f "$DUPLICATE_FILE" ]; then
+        echo "Found duplicate.sh - will test feature idempotency"
+    else
+        echo "No duplicate.sh found - skipping idempotency test"
+    fi
 else
     echo "WARNING: No test directory found at $TEST_DIR"
     echo "Running basic feature test without custom tests"
 fi
 
 # Run the test
+echo ""
 echo "Running devcontainer features test..."
 echo "Command: devcontainer features test --project-folder $WORKSPACE_DIR --features $FEATURE_NAME --base-image $BASE_IMAGE"
 echo ""
@@ -89,6 +114,25 @@ if devcontainer features test \
     --base-image "$BASE_IMAGE"; then
     echo ""
     echo "✅ Feature test completed successfully!"
+
+    # Run additional tests if they exist
+    if [ -d "$TEST_DIR" ]; then
+        echo ""
+        echo "Running additional tests..."
+
+        # Run duplicate test if it exists
+        if [ -f "$TEST_DIR/duplicate.sh" ] && [ -x "$TEST_DIR/duplicate.sh" ]; then
+            echo "Running idempotency test (duplicate.sh)..."
+            if "$TEST_DIR/duplicate.sh"; then
+                echo "✅ Idempotency test passed!"
+            else
+                echo "❌ Idempotency test failed!"
+                exit 1
+            fi
+        fi
+
+        echo "✅ All tests completed successfully!"
+    fi
 else
     echo ""
     echo "❌ Feature test failed!"

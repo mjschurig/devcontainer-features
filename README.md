@@ -116,7 +116,9 @@ An advanced feature showcasing complex installation patterns and multiple tools.
 
 3. **Create tests**:
 
-   - `test/my-feature/test.sh` - Test script
+   - `test/my-feature/test.sh` - Test script (required)
+   - `test/my-feature/scenarios.json` - Multiple test scenarios (optional)
+   - `test/my-feature/duplicate.sh` - Idempotency test (optional)
 
 4. **Validate and test**:
    ```bash
@@ -169,6 +171,34 @@ The repository includes comprehensive testing using the official devcontainer CL
 - **Integration Testing**: Features against multiple base images
 - **Idempotency Testing**: Safe re-installation
 - **Security Scanning**: ShellCheck, secret detection
+
+#### Optional Test Files
+
+Features can include optional test files for enhanced testing:
+
+- **`scenarios.json`**: Define multiple test scenarios with different configurations
+  ```json
+  {
+    "default": {
+      "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+      "features": { "my-feature": {} }
+    },
+    "with_options": {
+      "image": "mcr.microsoft.com/devcontainers/base:debian",
+      "features": { "my-feature": { "option": "value" } }
+    }
+  }
+  ```
+
+- **`duplicate.sh`**: Test feature idempotency (safe re-installation)
+  ```bash
+  #!/bin/bash
+  # Test that the feature can be installed multiple times safely
+  echo "Testing idempotency..."
+  # Add your idempotency tests here
+  ```
+
+If these files are present, they will be automatically used by the test scripts. If not present, testing will proceed with default behavior.
 
 Run tests locally:
 
