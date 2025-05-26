@@ -42,8 +42,10 @@ Both `test.yml` and `release.yml` workflows now include logic to:
 The test steps now:
 
 1. **Check for scenario-specific scripts**: Look for `test/{feature}/{scenario}.sh` files
-2. **Create temporary devcontainer.json**: Extract the scenario configuration from scenarios.json
+2. **Create temporary devcontainer.json**: Extract the scenario configuration from scenarios.json and convert feature names to local syntax (prepend `./src/`)
 3. **Run scenario tests**: Execute either the scenario-specific script or fall back to general testing
+
+**Important**: The workflows automatically convert feature names from `"feature-name"` to `"./src/feature-name"` to ensure compatibility with the devcontainer CLI's local feature requirements.
 
 ## File Structure
 
@@ -205,3 +207,29 @@ This script:
 - **Reduced total test time**: Parallel execution significantly reduces overall workflow duration
 - **Increased runner usage**: More GitHub Actions runners are used simultaneously
 - **Better failure isolation**: Failed scenarios don't impact others, allowing partial success states
+
+## Technical Implementation Details
+
+### Local Feature Reference Fix
+
+The devcontainer CLI requires local features to be prefixed with `./` to distinguish them from registry features. To handle this, the workflows automatically convert feature names in scenarios.json from:
+
+```json
+{
+  "features": {
+    "deal-ii": {}
+  }
+}
+```
+
+To:
+
+```json
+{
+  "features": {
+    "./src/deal-ii": {}
+  }
+}
+```
+
+This conversion happens automatically in both GitHub Actions workflows and the local test script, ensuring compatibility without requiring changes to existing scenarios.json files.

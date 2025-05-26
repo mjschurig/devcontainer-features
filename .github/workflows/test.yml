@@ -252,9 +252,20 @@ jobs:
               echo "Creating temporary devcontainer configuration..."
               mkdir -p .devcontainer-test
 
-              # Extract scenario configuration from scenarios.json
+              # Extract scenario configuration from scenarios.json and fix feature references
               SCENARIO_CONFIG=$(jq ".[\"${{ matrix.scenario }}\"]" "$SCENARIOS_FILE")
-              echo "$SCENARIO_CONFIG" > .devcontainer-test/devcontainer.json
+
+              # Convert feature names to local feature syntax (prepend "./src/")
+              FIXED_CONFIG=$(echo "$SCENARIO_CONFIG" | jq '
+                if .features then
+                  .features = (.features | to_entries | map({
+                    key: (if (.key | startswith("./")) then .key else "./src/" + .key end),
+                    value: .value
+                  }) | from_entries)
+                else . end
+              ')
+
+              echo "$FIXED_CONFIG" > .devcontainer-test/devcontainer.json
 
               echo "Scenario configuration:"
               cat .devcontainer-test/devcontainer.json
@@ -262,8 +273,8 @@ jobs:
               # Run devcontainer test with scenario configuration
               devcontainer up --workspace-folder . --config .devcontainer-test/devcontainer.json
 
-              # Run scenario-specific test
-              "./$SCENARIO_SCRIPT"
+              # Run scenario-specific test inside the container
+              devcontainer exec --workspace-folder . --config .devcontainer-test/devcontainer.json bash -c "cd /workspaces/devcontainer-features && ./$SCENARIO_SCRIPT"
 
               # Cleanup
               rm -rf .devcontainer-test
