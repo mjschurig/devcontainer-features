@@ -126,8 +126,8 @@ fi
 
 # Validate Trilinos dependency
 if [ "${ENABLE_TRILINOS}" = "true" ]; then
-    if [ ! -d "/usr/local/trilinos" ]; then
-        print_error "Trilinos support requested but Trilinos installation not found at /usr/local/trilinos"
+    if [ ! -d "/usr/local" ] || [ ! -f "/usr/local/lib/cmake/Trilinos/TrilinosConfig.cmake" ]; then
+        print_error "Trilinos support requested but Trilinos installation not found at /usr/local"
         print_error "Make sure the Trilinos feature is installed first"
         exit 1
     fi
@@ -191,7 +191,7 @@ fi
 
 if [ "${ENABLE_TRILINOS}" = "true" ]; then
     CMAKE_ARGS="${CMAKE_ARGS} -DDEAL_II_WITH_TRILINOS=ON"
-    CMAKE_ARGS="${CMAKE_ARGS} -DTrilinos_DIR=/usr/local/trilinos/lib/cmake/Trilinos"
+    CMAKE_ARGS="${CMAKE_ARGS} -DTrilinos_DIR=/usr/local/lib/cmake/Trilinos"
 fi
 
 # Run CMake configuration
