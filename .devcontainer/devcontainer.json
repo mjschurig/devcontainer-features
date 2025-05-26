@@ -27,7 +27,8 @@
         "ms-vscode.vscode-docker",
         "streetsidesoftware.code-spell-checker",
         "ms-vscode.vscode-bash-debug",
-        "timonwong.shellcheck"
+        "timonwong.shellcheck",
+        "github.vscode-github-actions"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",

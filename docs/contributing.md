@@ -51,7 +51,7 @@ Thank you for your interest in contributing to this dev container features repos
 1. **Fork and clone**:
 
    ```bash
-   git clone https://github.com/your-username/devcontainer-features.git
+   git clone https://github.com/mjschurig/devcontainer-features.git
    cd devcontainer-features
    ```
 

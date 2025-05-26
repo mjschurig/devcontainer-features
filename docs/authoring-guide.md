@@ -36,7 +36,7 @@ This file defines the feature's metadata, options, and behavior.
   "version": "1.0.0",
   "name": "My Awesome Feature",
   "description": "A brief description of what this feature does",
-  "documentationURL": "https://github.com/your-username/devcontainer-features/tree/main/src/my-feature",
+  "documentationURL": "https://github.com/mjschurig/devcontainer-features/tree/main/src/my-feature",
   "keywords": ["example", "demo", "my-feature"],
   "options": {
     "version": {
@@ -279,7 +279,7 @@ Brief description of what this feature does and why it's useful.
 \`\`\`json
 {
 "features": {
-"ghcr.io/your-username/devcontainer-features/my-feature:1": {}
+"ghcr.io/mjschurig/devcontainer-features/my-feature:1": {}
 }
 }
 \`\`\`
@@ -289,7 +289,7 @@ Brief description of what this feature does and why it's useful.
 \`\`\`json
 {
 "features": {
-"ghcr.io/your-username/devcontainer-features/my-feature:1": {
+"ghcr.io/mjschurig/devcontainer-features/my-feature:1": {
 "version": "2.0",
 "enableFeatureX": true
 }
@@ -311,7 +311,7 @@ Brief description of what this feature does and why it's useful.
 \`\`\`json
 {
 "features": {
-"ghcr.io/your-username/devcontainer-features/my-feature:1": {
+"ghcr.io/mjschurig/devcontainer-features/my-feature:1": {
 "version": "latest"
 }
 }
@@ -323,7 +323,7 @@ Brief description of what this feature does and why it's useful.
 \`\`\`json
 {
 "features": {
-"ghcr.io/your-username/devcontainer-features/my-feature:1": {
+"ghcr.io/mjschurig/devcontainer-features/my-feature:1": {
 "version": "2.0",
 "enableFeatureX": true
 }
@@ -356,7 +356,7 @@ Brief description of what this feature does and why it's useful.
 
 ## Contributing
 
-See the [main repository](https://github.com/your-username/devcontainer-features) for contribution guidelines.
+See the [main repository](https://github.com/mjschurig/devcontainer-features) for contribution guidelines.
 ```
 
 ### 5. Testing (`test/my-feature/test.sh`)

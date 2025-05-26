@@ -12,11 +12,11 @@ Add features to your `devcontainer.json`:
 {
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
-    "ghcr.io/your-username/devcontainer-features/hello-world:1": {
+    "ghcr.io/mjschurig/devcontainer-features/hello-world:1": {
       "greeting": "Hello",
       "name": "Developer"
     },
-    "ghcr.io/your-username/devcontainer-features/hello-universe:1": {
+    "ghcr.io/mjschurig/devcontainer-features/hello-universe:1": {
       "scope": "galaxy",
       "language": "spanish"
     }
@@ -29,7 +29,7 @@ Add features to your `devcontainer.json`:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/your-username/devcontainer-features.git
+   git clone https://github.com/mjschurig/devcontainer-features.git
    cd devcontainer-features
    ```
 
@@ -212,7 +212,7 @@ Features are automatically published when:
 - Tags are pushed (`v*`)
 - Manual workflow dispatch
 
-Published to: `ghcr.io/your-username/devcontainer-features`
+Published to: `ghcr.io/mjschurig/devcontainer-features`
 
 ### Workflows
 
@@ -267,8 +267,8 @@ All features must:
 
 ## 📊 Status
 
-![Test Status](https://github.com/your-username/devcontainer-features/workflows/Test%20Features/badge.svg)
-![Release Status](https://github.com/your-username/devcontainer-features/workflows/Release%20Features/badge.svg)
+![Test Status](https://github.com/mjschurig/devcontainer-features/workflows/Test%20Features/badge.svg)
+![Release Status](https://github.com/mjschurig/devcontainer-features/workflows/Release%20Features/badge.svg)
 
 ## 📄 License
 

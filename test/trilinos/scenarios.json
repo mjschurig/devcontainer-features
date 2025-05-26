@@ -1,0 +1,46 @@
+{
+  "default": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "trilinos": {}
+    }
+  },
+  "default_debian": {
+    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "features": {
+      "trilinos": {}
+    }
+  },
+  "minimal": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "trilinos": {
+        "enableMPI": false,
+        "enableKokkos": false,
+        "enableTpetra": false,
+        "enableBelos": false,
+        "enableIfpack2": false,
+        "enableFortran": false
+      }
+    }
+  },
+  "no_mpi": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "trilinos": {
+        "enableMPI": false,
+        "enableZoltan": false,
+        "enableZoltan2": false
+      }
+    }
+  },
+  "idempotency": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "trilinos": {
+        "version": "15.0.0"
+      }
+    },
+    "runTwice": true
+  }
+}

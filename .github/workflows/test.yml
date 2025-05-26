@@ -13,6 +13,8 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Skip on initial commit (when github.event.before is null SHA)
+    if: github.event.before != '0000000000000000000000000000000000000000'
     outputs:
       features: ${{ steps.changes.outputs.features }}
       features_json: ${{ steps.changes.outputs.features_json }}

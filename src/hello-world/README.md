@@ -17,7 +17,7 @@ This feature serves as:
 ```json
 {
   "features": {
-    "ghcr.io/your-username/devcontainer-features/hello-world:1": {}
+    "ghcr.io/mjschurig/devcontainer-features/hello-world:1": {}
   }
 }
 ```
@@ -27,7 +27,7 @@ This feature serves as:
 ```json
 {
   "features": {
-    "ghcr.io/your-username/devcontainer-features/hello-world:1": {
+    "ghcr.io/mjschurig/devcontainer-features/hello-world:1": {
       "greeting": "Hi",
       "name": "Developer",
       "includeDate": true
@@ -72,7 +72,7 @@ hello-world --date
 ```json
 {
   "features": {
-    "ghcr.io/your-username/devcontainer-features/hello-world:1": {}
+    "ghcr.io/mjschurig/devcontainer-features/hello-world:1": {}
   }
 }
 ```
@@ -84,7 +84,7 @@ Output: `Hello, World!`
 ```json
 {
   "features": {
-    "ghcr.io/your-username/devcontainer-features/hello-world:1": {
+    "ghcr.io/mjschurig/devcontainer-features/hello-world:1": {
       "greeting": "Greetings",
       "name": "Developer"
     }
@@ -99,7 +99,7 @@ Output: `Greetings, Developer!`
 ```json
 {
   "features": {
-    "ghcr.io/your-username/devcontainer-features/hello-world:1": {
+    "ghcr.io/mjschurig/devcontainer-features/hello-world:1": {
       "includeDate": true
     }
   }
