@@ -138,7 +138,7 @@ jobs:
           - "mcr.microsoft.com/devcontainers/base:ubuntu"
           - "mcr.microsoft.com/devcontainers/base:debian"
           - "ubuntu:22.04"
-          - "debian:bullseye"
+          - "debian:bookworm"
 
     steps:
       - name: Checkout (with retry)
