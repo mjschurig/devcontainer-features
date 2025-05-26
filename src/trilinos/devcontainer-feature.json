@@ -134,8 +134,11 @@
             "description": "Enable Fortran language support (required for some Trilinos packages)"
         }
     },
+    "dependsOn": {
+        "ghcr.io/devcontainers-extra/features/cmake:1": {}
+    },
     "containerEnv": {
         "TRILINOS_DIR": "${installPrefix}",
         "CMAKE_PREFIX_PATH": "${installPrefix}:${CMAKE_PREFIX_PATH}"
     }
-} 
+}
