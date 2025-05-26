@@ -255,6 +255,11 @@ jobs:
               echo "Creating temporary devcontainer configuration..."
               mkdir -p .devcontainer-test
 
+              # Copy the feature to .devcontainer-test/src to satisfy CLI path restrictions
+              echo "Copying feature to .devcontainer-test/src/${{ matrix.feature }}..."
+              mkdir -p .devcontainer-test/src
+              cp -r "src/${{ matrix.feature }}" ".devcontainer-test/src/"
+
               # Extract scenario configuration from scenarios.json and fix feature references
               SCENARIO_CONFIG=$(jq ".[\"${{ matrix.scenario }}\"]" "$SCENARIOS_FILE")
 
@@ -305,10 +310,19 @@ jobs:
           else
             # No scenario test script, use devcontainer features test
             echo "Running devcontainer features test..."
+
+            # Create temporary structure for devcontainer features test
+            mkdir -p .devcontainer-test/src
+            cp -r "src/${{ matrix.feature }}" ".devcontainer-test/src/"
+
+            # Use devcontainer features test with the copied feature
             devcontainer features test \
-              --project-folder . \
+              --project-folder .devcontainer-test \
               --features "${{ matrix.feature }}" \
               --base-image "${{ matrix.image }}"
+
+            # Cleanup
+            rm -rf .devcontainer-test
           fi
 
   test-feature-combinations:
