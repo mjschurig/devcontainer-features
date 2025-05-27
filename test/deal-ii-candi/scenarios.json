@@ -1,0 +1,35 @@
+{
+    "with-trilinos": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableTrilinos": true
+                }
+            }
+        }
+    },
+    "with-petsc": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enablePetsc": true
+                }
+            }
+        }
+    },
+    "with-mpi": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableMPI": true
+                }
+            }
+        }
+    }
+}

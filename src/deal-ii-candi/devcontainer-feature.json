@@ -1,6 +1,6 @@
 {
   "id": "deal-ii-candi",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "name": "deal.II with candi",
   "description": "Installs deal.II using candi (Compile & Install) with comprehensive package support including Trilinos, PETSc, p4est, HDF5, and more",
   "documentationURL": "https://github.com/mjschurig/devcontainer-features/tree/main/src/deal-ii-candi",
@@ -72,8 +72,8 @@
     },
     "enableTrilinos": {
       "type": "boolean",
-      "default": true,
-      "description": "Install Trilinos for advanced linear algebra operations"
+      "default": false,
+      "description": "Install Trilinos via candi for advanced linear algebra operations (WARNING: Known compatibility issues - system packages used by default)"
     },
     "trilinosMajorVersion": {
       "type": "string",
@@ -88,13 +88,13 @@
     },
     "enablePetsc": {
       "type": "boolean",
-      "default": true,
-      "description": "Install PETSc for parallel linear algebra"
+      "default": false,
+      "description": "Install PETSc via candi for parallel linear algebra (WARNING: Known SCALAPACK/CMake compatibility issues - system packages used by default)"
     },
     "enableSlepc": {
       "type": "boolean",
-      "default": true,
-      "description": "Install SLEPc for eigenvalue problems (requires PETSc)"
+      "default": false,
+      "description": "Install SLEPc via candi for eigenvalue problems (WARNING: Requires candi PETSc - system packages used by default)"
     },
     "enableP4est": {
       "type": "boolean",
@@ -108,18 +108,18 @@
     },
     "enableOpencascade": {
       "type": "boolean",
-      "default": true,
-      "description": "Install OpenCASCADE for CAD file support"
+      "default": false,
+      "description": "Install OpenCASCADE for CAD file support (WARNING: Known compatibility issues with modern systems - use system packages instead)"
     },
     "enableParmetis": {
       "type": "boolean",
-      "default": true,
-      "description": "Install ParMETIS for mesh partitioning"
+      "default": false,
+      "description": "Install ParMETIS via candi for mesh partitioning (WARNING: Known compatibility issues - system packages used by default)"
     },
     "enableSundials": {
       "type": "boolean",
-      "default": true,
-      "description": "Install SUNDIALS for ODE/DAE solving"
+      "default": false,
+      "description": "Install SUNDIALS via candi for ODE/DAE solving (WARNING: Known compatibility issues - system packages used by default)"
     },
     "enableSymengine": {
       "type": "boolean",
@@ -238,7 +238,10 @@
     }
   },
   "dependsOn": {
-    "ghcr.io/devcontainers/features/common-utils": {}
+    "ghcr.io/devcontainers/features/common-utils": {},
+    "ghcr.io/devcontainers-extra/features/cmake:1": {
+      "version": "3.31.0"
+    }
   },
   "containerEnv": {
     "DEAL_II_DIR": "/usr/local/dealii-candi",

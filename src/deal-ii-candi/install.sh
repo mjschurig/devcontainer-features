@@ -82,6 +82,77 @@ apt-get install -y \
     python3-dev \
     python3-pip
 
+# Install system OpenCASCADE packages as a modern alternative to candi's outdated version
+echo "Installing system OpenCASCADE packages for better compatibility..."
+apt-get install -y \
+    libocct-data-exchange-dev \
+    libocct-foundation-dev \
+    libocct-modeling-algorithms-dev \
+    libocct-modeling-data-dev \
+    libocct-ocaf-dev \
+    libocct-visualization-dev \
+    occt-misc || {
+    # Fallback for older Ubuntu versions
+    echo "Modern OpenCASCADE packages not available, trying legacy packages..."
+    apt-get install -y \
+        liboce-foundation-dev \
+        liboce-modeling-dev \
+        liboce-ocaf-dev \
+        liboce-visualization-dev \
+        oce-draw || echo "OpenCASCADE system packages not available - this is OK, deal.II will work without them"
+}
+
+# Install system ParMETIS and METIS packages as a modern alternative to candi's problematic versions
+echo "Installing system ParMETIS and METIS packages for better compatibility..."
+apt-get install -y \
+    libparmetis-dev \
+    libmetis-dev \
+    parmetis-test || {
+    echo "Warning: Could not install ParMETIS/METIS system packages - candi fallback may be needed"
+}
+
+# Install system SUNDIALS packages as a modern alternative to candi's problematic versions
+echo "Installing system SUNDIALS packages for better compatibility..."
+apt-get install -y \
+    libsundials-dev \
+    libsundials-core-dev || {
+    echo "Warning: Could not install SUNDIALS system packages - candi fallback may be needed"
+}
+
+# Install system Trilinos packages as a modern alternative to candi's problematic versions
+echo "Installing system Trilinos packages for better compatibility..."
+apt-get install -y \
+    libtrilinos-dev \
+    libtrilinos-ml-dev \
+    libtrilinos-epetra-dev \
+    libtrilinos-teuchos-dev \
+    libtrilinos-aztecoo-dev \
+    libtrilinos-belos-dev \
+    trilinos-dev || {
+    echo "Warning: Could not install Trilinos system packages - candi fallback may be needed"
+}
+
+# Install system PETSc and SCALAPACK packages as a modern alternative to candi's problematic versions
+echo "Installing system PETSc and SCALAPACK packages for better compatibility..."
+apt-get install -y \
+    libpetsc-real-dev \
+    libpetsc-complex-dev \
+    petsc-dev \
+    libscalapack-mpi-dev \
+    libscalapack-openmpi-dev \
+    scalapack-test || {
+    echo "Warning: Could not install PETSc/SCALAPACK system packages - candi fallback may be needed"
+}
+
+# Install system SLEPc packages as a modern alternative to candi's problematic versions
+echo "Installing system SLEPc packages for better compatibility..."
+apt-get install -y \
+    libslepc-real-dev \
+    libslepc-complex-dev \
+    slepc-dev || {
+    echo "Warning: Could not install SLEPc system packages - candi fallback may be needed"
+}
+
 # Create installation directory
 mkdir -p "${INSTALL_PATH}"
 cd /tmp
@@ -109,7 +180,8 @@ INSTALL_PATH=${INSTALL_PATH}
 MIRROR="https://tjhei.info/candi-mirror/ https://falankefu.clemson.edu/candi-mirror/"
 
 # Choose additional configuration and components of deal.II
-DEAL_II_CONFOPTS=""
+# Add POSIX compatibility flag for better build compatibility on various systems
+DEAL_II_CONFOPTS="-DDEAL_II_WITH_OPENCASCADE=ON -DDEAL_II_WITH_METIS=ON -DDEAL_II_WITH_PARMETIS=ON -DDEAL_II_WITH_SUNDIALS=ON -DDEAL_II_WITH_TRILINOS=ON -DDEAL_II_WITH_PETSC=ON -DDEAL_II_WITH_SLEPC=ON -DDEAL_II_CXX_FLAGS=-D_POSIX_C_SOURCE=199309L"
 
 # Option {ON|OFF}: Enable machine-specific optimizations (e.g. -march=native)?
 NATIVE_OPTIMIZATIONS=$([ "$NATIVE_OPTIMIZATIONS" = "true" ] && echo "ON" || echo "OFF")
@@ -337,12 +409,19 @@ EOF
     echo "Installation summary:"
     echo "  deal.II version: ${DEALII_VERSION}"
     echo "  Installation path: ${INSTALL_PATH}"
-    echo "  Trilinos enabled: ${ENABLE_TRILINOS}"
-    echo "  PETSc enabled: ${ENABLE_PETSC}"
+    echo "  Trilinos (candi): ${ENABLE_TRILINOS}"
+    echo "  Trilinos (system): Always attempted (fallback to modern packages)"
+    echo "  PETSc (candi): ${ENABLE_PETSC}"
+    echo "  PETSc (system): Always attempted (fallback to modern packages)"
     echo "  SLEPc enabled: ${ENABLE_SLEPC}"
     echo "  p4est enabled: ${ENABLE_P4EST}"
     echo "  HDF5 enabled: ${ENABLE_HDF5}"
-    echo "  OpenCASCADE enabled: ${ENABLE_OPENCASCADE}"
+    echo "  OpenCASCADE (candi): ${ENABLE_OPENCASCADE}"
+    echo "  OpenCASCADE (system): Always attempted (fallback to modern packages)"
+    echo "  ParMETIS (candi): ${ENABLE_PARMETIS}"
+    echo "  ParMETIS (system): Always attempted (fallback to modern packages)"
+    echo "  SUNDIALS (candi): ${ENABLE_SUNDIALS}"
+    echo "  SUNDIALS (system): Always attempted (fallback to modern packages)"
 
 else
     echo "ERROR: deal.II installation failed!"
