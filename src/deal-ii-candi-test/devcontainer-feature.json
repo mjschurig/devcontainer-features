@@ -1,5 +1,5 @@
 {
-  "id": "deal-ii-candi",
+  "id": "deal-ii-candi-test",
   "version": "1.6.0",
   "name": "deal.II with candi",
   "description": "Installs deal.II using candi (Compile & Install) with comprehensive package support including Trilinos, PETSc, p4est, HDF5, and more",
