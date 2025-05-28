@@ -136,41 +136,9 @@ jobs:
 
           echo "Version validation passed"
 
-  test-features:
-    runs-on: ubuntu-latest
-    needs: [detect-features, validate-features]
-    if: needs.detect-features.outputs.features != ''
-    strategy:
-      fail-fast: false
-      matrix:
-        feature: ${{ fromJson(needs.detect-features.outputs.features_json) }}
-        base-image:
-          - "mcr.microsoft.com/devcontainers/base:ubuntu"
-          - "mcr.microsoft.com/devcontainers/base:debian"
-          - "ubuntu:20.04"
-          - "ubuntu:18.04"
-          - "centos:7"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Install devcontainer CLI
-        run: npm install -g @devcontainers/cli
-
-      - name: Test feature
-        run: |
-          chmod +x scripts/test-feature.sh
-          ./scripts/test-feature.sh ${{ matrix.feature }} "${{ matrix.base-image }}"
-
   build-and-publish:
     runs-on: ubuntu-latest
-    needs: [detect-features, validate-features, test-features]
+    needs: [detect-features, validate-features]
     if: needs.detect-features.outputs.features != ''
     strategy:
       matrix:

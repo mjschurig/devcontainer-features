@@ -6,6 +6,10 @@
 
 set -e
 
+# Prevent interactive prompts during package installation
+export DEBIAN_FRONTEND=noninteractive
+export TZ=UTC
+
 # Feature option defaults (these will be overridden by environment variables)
 DEALII_VERSION=${DEALIIVERSION:-"v9.6.1"}
 INSTALL_PATH=${INSTALLPATH:-"/usr/local/dealii-candi"}
@@ -96,11 +100,22 @@ get_username() {
 install_system_dependencies() {
     log_info "Installing system dependencies..."
 
+    # Pre-configure tzdata to avoid interactive prompts
+    echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections
+    echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections
+
+    # Pre-configure other packages that might prompt
+    echo 'libc6 libraries/restart-without-asking boolean true' | debconf-set-selections
+    echo 'libssl1.1:amd64 libraries/restart-without-asking boolean true' | debconf-set-selections
+
+    # Reconfigure tzdata non-interactively
+    dpkg-reconfigure -f noninteractive tzdata 2>/dev/null || true
+
     # Update package lists
     apt-get update
 
     # Install essential build tools and dependencies
-    apt-get install -y \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
         build-essential \
         gfortran \
         git \
@@ -344,7 +359,7 @@ install_system_fallbacks() {
 
     if [ -n "$packages_to_install" ]; then
         log_info "Installing system fallback packages: $packages_to_install"
-        apt-get install -y $packages_to_install || log_warn "Some system packages could not be installed"
+        DEBIAN_FRONTEND=noninteractive apt-get install -y $packages_to_install || log_warn "Some system packages could not be installed"
     fi
 }
 
@@ -437,6 +452,9 @@ cleanup() {
     # Clean package cache
     apt-get clean
     rm -rf /var/lib/apt/lists/*
+
+    # Reset environment variables
+    unset DEBIAN_FRONTEND
 
     log_info "Cleanup completed"
 }

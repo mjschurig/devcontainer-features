@@ -509,49 +509,64 @@ target_compile_options(main PRIVATE ${DEAL_II_CXX_FLAGS})
 
 ## Known Issues and Workarounds
 
-### Package Compatibility
-Some packages have known compatibility issues with modern systems:
+### Ubuntu 20.04 Specific Issues
 
-- **Trilinos**: Use system packages for better stability
-- **PETSc/SLEPc**: Known SCALAPACK/CMake issues
-- **OpenCASCADE**: Compatibility issues with recent compilers
-- **ParMETIS**: Build failures on some systems
-- **SUNDIALS**: Version conflicts possible
+**Based on community reports and GitHub issues, Ubuntu 20.04 has several known compatibility problems with candi builds:**
 
-The feature automatically installs system package fallbacks for these libraries.
+#### Trilinos Build Failures
+- **Issue**: CMake installation errors with "Cannot open file for write" and "Permission denied" messages
+- **Cause**: Known Trilinos CMake bug ([Trilinos #7419](https://github.com/trilinos/Trilinos/issues/7419)) affecting parallel builds
+- **Workaround**: Feature automatically falls back to system packages (`libtrilinos-dev`)
+- **Memory Requirements**: Trilinos builds require 4GB+ RAM, often exceeding container limits
 
-### Memory Requirements
-Large builds (especially with Trilinos complex support) require significant RAM:
+#### System Package Conflicts
+- **Issue**: Incomplete system Trilinos packages cause configuration errors ([deal.II #17916](https://github.com/dealii/dealii/issues/17916))
+- **Cause**: Ubuntu packages missing CMake configuration files for some Trilinos components
+- **Workaround**: Feature includes comprehensive system package installation as fallback
 
-- **Minimum**: 4GB RAM
-- **Recommended**: 8GB+ RAM for full builds
-- **Trilinos with complex**: 16GB+ RAM recommended
+#### SCALAPACK Dependencies
+- **Issue**: Missing SCALAPACK libraries cause Trilinos configuration failures
+- **Solution**: Feature automatically installs `libscalapack-openmpi-dev` and related packages
 
-### Build Time
-Installation times vary significantly:
+#### Community Recommendations
+Multiple users in the [deal.II community forums](https://community.geodynamics.org/t/i-cant-use-candi-to-compile-deal-ii-9-3-here-are-the-error-messages/1961) recommend:
+1. Using system packages instead of candi for Ubuntu 20.04
+2. Installing additional dependencies: `libmumps-ptscotch-dev`, `libptscotch-dev`
+3. Avoiding complex package combinations that exceed memory limits
 
-- **Minimal build**: 30-60 minutes
-- **Standard build**: 1-2 hours
-- **Full build with tests**: 3-4 hours
+### Memory and Build Time Considerations
 
-## Troubleshooting
+### Troubleshooting Guide
 
-### Build Failures
-1. Check available memory and disk space
-2. Reduce `buildJobs` to avoid memory issues
-3. Disable problematic packages and use system alternatives
-4. Check logs in `/tmp/candi` for detailed error messages
+#### If Trilinos Build Fails
+1. **Check available memory**: Ensure at least 4GB RAM available
+2. **Reduce parallel jobs**: Set `buildJobs` to "1" or "2"
+3. **Use system packages**: Set `enableTrilinos=false` and rely on system installation
+4. **Check logs**: Look for "Permission denied" or "Cannot open file for write" errors
 
-### Missing Features
-If deal.II reports missing features:
-1. Verify the corresponding package is enabled
-2. Check if system packages are installed as fallbacks
-3. Examine `deal.IIConfig.cmake` for enabled features
+#### If System Package Installation Fails
+```bash
+# Manually install missing dependencies
+sudo apt-get update
+sudo apt-get install -y \
+    libtrilinos-dev \
+    libscalapack-openmpi-dev \
+    libmumps-ptscotch-dev \
+    libptscotch-dev \
+    libsuitesparse-dev
+```
 
-### Performance Issues
-1. Enable `nativeOptimizations` for better performance
-2. Use optimized BLAS/LAPACK (OpenBLAS or MKL)
-3. Ensure parallel libraries are properly configured
+#### Container Memory Issues
+- **Symptoms**: Build processes killed, "make: *** [target] Error 137"
+- **Solution**: Increase Docker memory limit to 8GB+ or use fewer parallel jobs
+
+### References and Further Reading
+
+- [Trilinos CMake Permission Issues](https://github.com/trilinos/Trilinos/issues/7419)
+- [deal.II System Package Problems](https://github.com/dealii/dealii/issues/17916)
+- [Community Discussion on Ubuntu 20.04 Issues](https://community.geodynamics.org/t/i-cant-use-candi-to-compile-deal-ii-9-3-here-are-the-error-messages/1961)
+- [Xyce Build Issues on Ubuntu 20.04](https://github.com/Xyce/Xyce/issues/100)
+- [Official deal.II Trilinos Documentation](https://dealii.org/developer/external-libs/trilinos.html)
 
 ## Contributing
 

@@ -29,6 +29,28 @@
             }
         }
     },
+    "trilinos-on-ubuntu-20.04": {
+        "image": "ubuntu:20.04",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableTrilinos": true
+                }
+            }
+        }
+    },
+    "trilinos-on-ubuntu-18.04": {
+        "image": "ubuntu:18.04",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableTrilinos": true
+                }
+            }
+        }
+    },
     "with-trilinos-complex": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {

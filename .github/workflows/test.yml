@@ -137,8 +137,9 @@ jobs:
         base-image:
           - "mcr.microsoft.com/devcontainers/base:ubuntu"
           - "mcr.microsoft.com/devcontainers/base:debian"
-          - "ubuntu:22.04"
           - "debian:bookworm"
+          - "debian:bullseye"
+          - "ubuntu:22.04"
           - "ubuntu:20.04"
           - "ubuntu:18.04"
           - "centos:7"
@@ -198,6 +199,170 @@ jobs:
           chmod +x scripts/test-feature.sh
           echo "Testing feature ${{ matrix.feature }} with base image ${{ matrix.base-image }}"
           ./scripts/test-feature.sh ${{ matrix.feature }} "${{ matrix.base-image }}"
+
+  test-scenarios:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, validate-features]
+    if: needs.detect-changes.outputs.features != '' && always()
+    outputs:
+      scenarios_matrix: ${{ steps.build-matrix.outputs.scenarios_matrix }}
+      has_scenarios: ${{ steps.build-matrix.outputs.has_scenarios }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout (with retry)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Retry checkout if failed
+        if: failure()
+        uses: actions/checkout@v3  # Fallback to older version
+        with:
+          fetch-depth: 1
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Manual checkout fallback
+        if: failure()
+        run: |
+          echo "Both checkout actions failed, trying manual git clone..."
+          git clone --depth=1 ${{ github.server_url }}/${{ github.repository }} .
+          git checkout ${{ github.sha }}
+
+      - name: Install dependencies
+        run: |
+          echo "Installing required packages..."
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl wget
+          echo "Dependencies installed successfully"
+
+      - name: Build scenarios matrix
+        id: build-matrix
+        run: |
+          echo "Building scenarios matrix for features: ${{ needs.detect-changes.outputs.features }}"
+
+          FEATURES="${{ needs.detect-changes.outputs.features }}"
+          MATRIX_ENTRIES="[]"
+          HAS_SCENARIOS=false
+
+          # Process each feature
+          for feature in $FEATURES; do
+            SCENARIOS_FILE="test/$feature/scenarios.json"
+            echo "Checking for scenarios file: $SCENARIOS_FILE"
+
+            if [ -f "$SCENARIOS_FILE" ]; then
+              echo "Found scenarios file for feature: $feature"
+              HAS_SCENARIOS=true
+
+              # Extract scenarios and add to matrix
+              SCENARIOS=$(jq -r 'keys[]' "$SCENARIOS_FILE")
+              for scenario in $SCENARIOS; do
+                # Create matrix entry for this feature-scenario combination
+                ENTRY=$(jq -n --arg feature "$feature" --arg scenario "$scenario" '{feature: $feature, scenario: $scenario}')
+                MATRIX_ENTRIES=$(echo "$MATRIX_ENTRIES" | jq ". + [$ENTRY]")
+              done
+            else
+              echo "No scenarios.json found for feature: $feature"
+            fi
+          done
+
+          echo "Final scenarios matrix: $MATRIX_ENTRIES"
+          echo "Has scenarios: $HAS_SCENARIOS"
+
+          # Validate JSON format
+          if ! echo "$MATRIX_ENTRIES" | jq empty 2>/dev/null; then
+            echo "ERROR: Invalid JSON format in scenarios matrix: $MATRIX_ENTRIES"
+            exit 1
+          fi
+
+          echo "scenarios_matrix=$MATRIX_ENTRIES" >> $GITHUB_OUTPUT
+          echo "has_scenarios=$HAS_SCENARIOS" >> $GITHUB_OUTPUT
+
+  test-scenarios-execute:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, validate-features, test-scenarios]
+    if: needs.test-scenarios.outputs.has_scenarios == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.test-scenarios.outputs.scenarios_matrix) }}
+    timeout-minutes: 120  # Extended timeout for scenario testing
+
+    steps:
+      - name: Checkout (with retry)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Retry checkout if failed
+        if: failure()
+        uses: actions/checkout@v3  # Fallback to older version
+        with:
+          fetch-depth: 1
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Manual checkout fallback
+        if: failure()
+        run: |
+          echo "Both checkout actions failed, trying manual git clone..."
+          git clone --depth=1 ${{ github.server_url }}/${{ github.repository }} .
+          git checkout ${{ github.sha }}
+
+      - name: Install dependencies
+        run: |
+          echo "Installing required packages..."
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl wget
+          echo "Dependencies installed successfully"
+
+      - name: Setup Node.js (with retry)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+        timeout-minutes: 10
+        continue-on-error: true
+
+      - name: Install Node.js fallback
+        if: failure()
+        run: |
+          echo "Standard Node.js setup failed, installing manually..."
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          node --version
+          npm --version
+
+      - name: Install devcontainer CLI
+        run: |
+          echo "Installing devcontainer CLI..."
+          npm install -g @devcontainers/cli || {
+            echo "npm install failed, trying alternative installation..."
+            curl -fsSL https://github.com/devcontainers/cli/releases/latest/download/devcontainer-cli-linux-x64.tar.gz | tar -xz
+            sudo mv devcontainer /usr/local/bin/
+          }
+          devcontainer --version
+
+      - name: Test scenario
+        run: |
+          echo "Making test-scenario script executable..."
+          chmod +x scripts/test-scenario.sh
+
+          echo "=========================================="
+          echo "Testing Feature: ${{ matrix.feature }}"
+          echo "Testing Scenario: ${{ matrix.scenario }}"
+          echo "=========================================="
+
+          if ./scripts/test-scenario.sh "${{ matrix.feature }}" "${{ matrix.scenario }}"; then
+            echo "✅ Scenario '${{ matrix.scenario }}' for feature '${{ matrix.feature }}' passed"
+          else
+            echo "❌ Scenario '${{ matrix.scenario }}' for feature '${{ matrix.feature }}' failed"
+            exit 1
+          fi
 
   test-feature-combinations:
     runs-on: ubuntu-latest
@@ -438,6 +603,8 @@ jobs:
         detect-changes,
         validate-features,
         test-features,
+        test-scenarios,
+        test-scenarios-execute,
         test-feature-combinations,
         security-scan,
         build-features,
@@ -455,11 +622,13 @@ jobs:
           echo "### Results" >> $GITHUB_STEP_SUMMARY
           echo "- Validation: ${{ needs.validate-features.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Feature Tests: ${{ needs.test-features.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario Matrix: ${{ needs.test-scenarios.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario Tests: ${{ needs.test-scenarios-execute.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Feature Combinations: ${{ needs.test-feature-combinations.result }} (optional)" >> $GITHUB_STEP_SUMMARY
           echo "- Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Build: ${{ needs.build-features.result }}" >> $GITHUB_STEP_SUMMARY
 
-          # Set overall status (security scan is optional)
+          # Set overall status (security scan and feature combinations are optional)
           CORE_TESTS_PASSED=true
 
           if [ "${{ needs.validate-features.result }}" != "success" ]; then
@@ -467,6 +636,15 @@ jobs:
           fi
 
           if [ "${{ needs.test-features.result }}" != "success" ]; then
+            CORE_TESTS_PASSED=false
+          fi
+
+          if [ "${{ needs.test-scenarios.result }}" != "success" ]; then
+            CORE_TESTS_PASSED=false
+          fi
+
+          # Only check test-scenarios-execute if it actually ran (has scenarios)
+          if [ "${{ needs.test-scenarios.outputs.has_scenarios }}" == "true" ] && [ "${{ needs.test-scenarios-execute.result }}" != "success" ]; then
             CORE_TESTS_PASSED=false
           fi
 
@@ -481,6 +659,17 @@ jobs:
 
           if [ "${{ needs.test-feature-combinations.result }}" != "success" ]; then
             echo "⚠️ Feature combinations test had issues but workflow continues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Show scenario testing status
+          if [ "${{ needs.test-scenarios.outputs.has_scenarios }}" == "true" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Scenario Testing" >> $GITHUB_STEP_SUMMARY
+            echo "Scenarios were found and tested in parallel workers" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Scenario Testing" >> $GITHUB_STEP_SUMMARY
+            echo "No scenarios.json files found - scenario testing skipped" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ "$CORE_TESTS_PASSED" = "true" ]; then

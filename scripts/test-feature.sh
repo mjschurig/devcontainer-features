@@ -111,28 +111,11 @@ echo ""
 if devcontainer features test \
     --project-folder "$WORKSPACE_DIR" \
     --features "$FEATURE_NAME" \
-    --base-image "$BASE_IMAGE"; then
+    --base-image "$BASE_IMAGE" \
+    --skip-scenarios; then
     echo ""
     echo "✅ Feature test completed successfully!"
 
-    # Run additional tests if they exist
-    if [ -d "$TEST_DIR" ]; then
-        echo ""
-        echo "Running additional tests..."
-
-        # Run duplicate test if it exists
-        if [ -f "$TEST_DIR/duplicate.sh" ] && [ -x "$TEST_DIR/duplicate.sh" ]; then
-            echo "Running idempotency test (duplicate.sh)..."
-            if "$TEST_DIR/duplicate.sh"; then
-                echo "✅ Idempotency test passed!"
-            else
-                echo "❌ Idempotency test failed!"
-                exit 1
-            fi
-        fi
-
-        echo "✅ All tests completed successfully!"
-    fi
 else
     echo ""
     echo "❌ Feature test failed!"
