@@ -1,6 +1,6 @@
 {
   "id": "dolfinx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "DOLFINx (FEniCSx)",
   "description": "Installs DOLFINx, the computational environment of FEniCSx for solving partial differential equations using finite element methods",
   "documentationURL": "https://github.com/mjschurig/devcontainer-features/tree/main/src/dolfinx",
