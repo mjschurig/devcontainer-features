@@ -147,6 +147,9 @@ jobs:
         base-image:
           - "mcr.microsoft.com/devcontainers/base:ubuntu"
           - "mcr.microsoft.com/devcontainers/base:debian"
+          - "ubuntu:20.04"
+          - "ubuntu:18.04"
+          - "centos:7"
 
     steps:
       - name: Checkout

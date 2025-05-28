@@ -139,6 +139,9 @@ jobs:
           - "mcr.microsoft.com/devcontainers/base:debian"
           - "ubuntu:22.04"
           - "debian:bookworm"
+          - "ubuntu:20.04"
+          - "ubuntu:18.04"
+          - "centos:7"
 
     steps:
       - name: Checkout (with retry)
