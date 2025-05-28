@@ -1,0 +1,50 @@
+{
+  "name": "DOLFINx Development Environment",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+
+  "workspaceFolder": "/workspace",
+
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+
+  "features": {
+    "ghcr.io/mjschurig/devcontainer-features/dolfinx:1": {
+      "version": "latest",
+      "scalarMode": "real",
+      "installJupyterLab": true,
+      "startJupyterLab": false,
+      "jupyterPort": "8888",
+      "jupyterWorkspaceDir": "/workspace",
+      "installVisualization": true,
+      "installOptionalDeps": true,
+      "mpiImplementation": "mpich",
+      "pythonVersion": "3.11",
+      "condaEnvironmentName": "fenicsx-env",
+      "installExamples": true,
+      "enableDevelopmentTools": false
+    }
+  },
+
+  "forwardPorts": [8888],
+
+  "postCreateCommand": "echo 'DOLFINx environment ready! Run: source ~/.dolfinx_env' && mkdir -p /workspace/.jupyter && echo 'c.ServerApp.root_dir = \"/workspace\"' > /workspace/.jupyter/jupyter_lab_config.py",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-vscode.cpptools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/miniconda3/envs/fenicsx-env/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "jupyter.notebookFileRoot": "${workspaceFolder}"
+      }
+    }
+  },
+
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,219 @@
+{
+    "basic-installation": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest"
+            }
+        }
+    },
+    "real-mode": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "scalarMode": "real"
+            }
+        }
+    },
+    "complex-mode": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "scalarMode": "complex"
+            }
+        }
+    },
+    "with-jupyter": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installJupyterLab": true,
+                "startJupyterLab": false
+            }
+        }
+    },
+    "with-jupyter-autostart": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installJupyterLab": true,
+                "startJupyterLab": true,
+                "jupyterPort": "8888"
+            }
+        }
+    },
+    "with-visualization": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installVisualization": true
+            }
+        }
+    },
+    "without-visualization": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installVisualization": false
+            }
+        }
+    },
+    "with-optional-deps": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installOptionalDeps": true
+            }
+        }
+    },
+    "without-optional-deps": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installOptionalDeps": false
+            }
+        }
+    },
+    "with-openmpi": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "mpiImplementation": "openmpi"
+            }
+        }
+    },
+    "with-mpich": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "mpiImplementation": "mpich"
+            }
+        }
+    },
+    "python-3.9": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.9",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "pythonVersion": "3.9"
+            }
+        }
+    },
+    "python-3.10": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.10",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "pythonVersion": "3.10"
+            }
+        }
+    },
+    "python-3.12": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.12",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "pythonVersion": "3.12"
+            }
+        }
+    },
+    "custom-env-name": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "condaEnvironmentName": "custom-dolfinx"
+            }
+        }
+    },
+    "without-examples": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installExamples": false
+            }
+        }
+    },
+    "with-development-tools": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "enableDevelopmentTools": true
+            }
+        }
+    },
+    "specific-version": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "0.9.0"
+            }
+        }
+    },
+    "full-featured": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "scalarMode": "real",
+                "installJupyterLab": true,
+                "startJupyterLab": true,
+                "jupyterPort": "8888",
+                "installVisualization": true,
+                "installOptionalDeps": true,
+                "mpiImplementation": "mpich",
+                "pythonVersion": "3.11",
+                "condaEnvironmentName": "fenicsx-env",
+                "installExamples": true,
+                "enableDevelopmentTools": true
+            }
+        }
+    },
+    "minimal": {
+        "image": "mcr.microsoft.com/devcontainers/python:3.11",
+        "features": {
+            "dolfinx": {
+                "version": "latest",
+                "installJupyterLab": false,
+                "installVisualization": false,
+                "installOptionalDeps": false,
+                "installExamples": false,
+                "enableDevelopmentTools": false
+            }
+        }
+    },
+    "ubuntu-20.04": {
+        "image": "ubuntu:20.04",
+        "features": {
+            "ghcr.io/devcontainers/features/python:1": {
+                "version": "3.11"
+            },
+            "dolfinx": {
+                "version": "latest"
+            }
+        }
+    },
+    "ubuntu-22.04": {
+        "image": "ubuntu:22.04",
+        "features": {
+            "ghcr.io/devcontainers/features/python:1": {
+                "version": "3.11"
+            },
+            "dolfinx": {
+                "version": "latest"
+            }
+        }
+    }
+}

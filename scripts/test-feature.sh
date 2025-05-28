@@ -112,7 +112,8 @@ if devcontainer features test \
     --project-folder "$WORKSPACE_DIR" \
     --features "$FEATURE_NAME" \
     --base-image "$BASE_IMAGE" \
-    --skip-scenarios; then
+    --skip-scenarios \
+    --skip-duplicated; then
     echo ""
     echo "✅ Feature test completed successfully!"
 

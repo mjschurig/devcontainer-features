@@ -1,0 +1,116 @@
+{
+  "id": "dolfinx",
+  "version": "1.0.0",
+  "name": "DOLFINx (FEniCSx)",
+  "description": "Installs DOLFINx, the computational environment of FEniCSx for solving partial differential equations using finite element methods",
+  "documentationURL": "https://github.com/mjschurig/devcontainer-features/tree/main/src/dolfinx",
+  "licenseURL": "https://github.com/FEniCS/dolfinx/blob/main/COPYING.LESSER",
+  "keywords": [
+    "python",
+    "cpp",
+    "c++",
+    "finite-elements",
+    "fem",
+    "pde",
+    "partial-differential-equations",
+    "numerical-analysis",
+    "scientific-computing",
+    "fenics",
+    "fenicsx",
+    "dolfinx",
+    "petsc",
+    "mpi",
+    "hdf5"
+  ],
+  "options": {
+    "version": {
+      "type": "string",
+      "proposals": [
+        "latest",
+        "0.9.0",
+        "0.8.0",
+        "0.7.3"
+      ],
+      "default": "latest",
+      "description": "Version of DOLFINx to install"
+    },
+    "scalarMode": {
+      "type": "string",
+      "proposals": [
+        "real",
+        "complex"
+      ],
+      "default": "real",
+      "description": "Scalar mode for DOLFINx/PETSc (real or complex numbers)"
+    },
+    "installJupyterLab": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install JupyterLab for interactive development"
+    },
+    "startJupyterLab": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically start JupyterLab server (requires installJupyterLab=true)"
+    },
+    "jupyterPort": {
+      "type": "string",
+      "default": "8888",
+      "description": "Port for JupyterLab server"
+    },
+    "jupyterWorkspaceDir": {
+      "type": "string",
+      "default": "/workspace",
+      "description": "Working directory for JupyterLab (should align with dev container workspace)"
+    },
+    "installVisualization": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install PyVista for visualization"
+    },
+    "installOptionalDeps": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install optional dependencies (numba, pyamg, slepc4py)"
+    },
+    "mpiImplementation": {
+      "type": "string",
+      "proposals": [
+        "mpich",
+        "openmpi"
+      ],
+      "default": "mpich",
+      "description": "MPI implementation to use"
+    },
+    "pythonVersion": {
+      "type": "string",
+      "proposals": [
+        "3.12",
+        "3.11",
+        "3.10",
+        "3.9"
+      ],
+      "default": "3.11",
+      "description": "Python version to use"
+    },
+    "condaEnvironmentName": {
+      "type": "string",
+      "default": "fenicsx-env",
+      "description": "Name for the conda environment"
+    },
+    "installExamples": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install DOLFINx examples and demos"
+    },
+    "enableDevelopmentTools": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install development tools (cmake, compilers, etc.) for building from source"
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils",
+    "ghcr.io/devcontainers/features/python"
+  ]
+}
