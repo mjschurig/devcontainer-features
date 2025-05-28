@@ -118,7 +118,8 @@ apt-get install -y \
     lsb-release \
     build-essential \
     git \
-    pkg-config
+    pkg-config \
+    libsqlite3-dev
 
 # Install development tools if requested
 if [ "$ENABLE_DEVELOPMENT_TOOLS" = "true" ]; then
@@ -192,8 +193,8 @@ setup_conda_env() {
 
     log_info "Setting up conda environment: $CONDA_ENV_NAME"
 
-    # Create environment with specific Python version
-    run_as_user "$conda_path" create -y -n "$CONDA_ENV_NAME" python="$PYTHON_VERSION"
+    # Create environment with specific Python version and pinned SQLite
+    run_as_user "$conda_path" create -y -n "$CONDA_ENV_NAME" python="$PYTHON_VERSION" sqlite
 
     log_success "Conda environment '$CONDA_ENV_NAME' created"
 }
@@ -664,6 +665,10 @@ main() {
     # Final verification
     log_info "Verifying installation..."
     run_as_user bash -c "source $USER_HOME/.dolfinx_env && python -c 'import dolfinx; print(f\"DOLFINx {dolfinx.__version__} installed successfully\")'"
+
+    # Verify SQLite compatibility for JupyterLab
+    log_info "Verifying SQLite compatibility..."
+    run_as_user bash -c "source $USER_HOME/.dolfinx_env && python -c 'import sqlite3; print(f\"SQLite {sqlite3.sqlite_version} compatible\")'" || log_warning "SQLite import failed - JupyterLab may not start correctly"
 
     # Verify Julia installation if enabled
     if [ "$INSTALL_JULIA" = "true" ]; then
