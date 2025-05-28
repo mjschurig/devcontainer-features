@@ -19,6 +19,9 @@ PYTHON_VERSION=${PYTHONVERSION:-"3.11"}
 CONDA_ENV_NAME=${CONDAENVIRONMENTNAME:-"fenicsx-env"}
 INSTALL_EXAMPLES=${INSTALLEXAMPLES:-"true"}
 ENABLE_DEVELOPMENT_TOOLS=${ENABLEDEVELOPMENTTOOLS:-"false"}
+INSTALL_JULIA=${INSTALLJULIA:-"false"}
+JULIA_CHANNEL=${JULIACHANNEL:-"release"}
+JULIA_JUPYTER_KERNEL=${JULIAJUPYTERKERNEL:-"true"}
 
 # Colors for output
 RED='\033[0;31m'
@@ -314,6 +317,11 @@ conda activate $CONDA_ENV_NAME
 # Set scalar mode
 export DOLFINX_SCALAR_MODE="$SCALAR_MODE"
 
+# Add Julia to PATH if installed
+if [ "$INSTALL_JULIA" = "true" ] && [ -d "\$HOME/.juliaup/bin" ]; then
+    export PATH="\$HOME/.juliaup/bin:\$PATH"
+fi
+
 # Add environment info
 echo "DOLFINx Environment Active"
 echo "Scalar Mode: $SCALAR_MODE"
@@ -322,6 +330,12 @@ echo "Python: \$(which python)"
 
 # Test DOLFINx import
 python -c "import dolfinx; print(f'DOLFINx version: {dolfinx.__version__}')" 2>/dev/null || echo "Warning: DOLFINx import failed"
+
+# Test Julia if installed
+if [ "$INSTALL_JULIA" = "true" ] && command -v julia >/dev/null 2>&1; then
+    echo "Julia: \$(which julia)"
+    julia --version 2>/dev/null || echo "Warning: Julia not found in PATH"
+fi
 EOF
 
     set_ownership "$USER_HOME/.dolfinx_env"
@@ -449,6 +463,147 @@ EOF
     log_success "Mode switching scripts created"
 }
 
+# Install Julia using juliaup
+install_julia() {
+    if [ "$INSTALL_JULIA" = "true" ]; then
+        log_info "Installing Julia using juliaup..."
+
+        # Install juliaup for the user
+        run_as_user bash -c "curl -fsSL https://install.julialang.org | sh -s -- --yes --default-channel=$JULIA_CHANNEL --add-to-path=yes"
+
+        # Add Julia to PATH in .bashrc if not already there
+        if ! grep -q "/.juliaup/bin" "$USER_HOME/.bashrc" 2>/dev/null; then
+            echo "" >> "$USER_HOME/.bashrc"
+            echo "# Julia (juliaup)" >> "$USER_HOME/.bashrc"
+            echo "export PATH=\"\$HOME/.juliaup/bin:\$PATH\"" >> "$USER_HOME/.bashrc"
+        fi
+
+        # Verify Julia installation
+        run_as_user bash -c "export PATH=\"$USER_HOME/.juliaup/bin:\$PATH\" && julia --version"
+
+        log_success "Julia installed successfully"
+    fi
+}
+
+# Install FEniCS.jl package
+install_fenics_jl() {
+    if [ "$INSTALL_JULIA" = "true" ]; then
+        log_info "Installing FEniCS.jl package..."
+
+        # Create Julia script to install FEniCS.jl and dependencies
+        cat > "$USER_HOME/install_fenics_jl.jl" << 'EOF'
+using Pkg
+
+# Add required packages for FEniCS.jl
+println("Adding PyCall package...")
+Pkg.add("PyCall")
+
+println("Adding FEniCS.jl package...")
+Pkg.add("FEniCS")
+
+# Configure PyCall to use the conda environment
+println("Configuring PyCall...")
+ENV["PYTHON"] = ""  # Use conda python
+Pkg.build("PyCall")
+
+# Precompile packages
+println("Precompiling packages...")
+Pkg.precompile()
+
+println("FEniCS.jl installation completed!")
+EOF
+
+        set_ownership "$USER_HOME/install_fenics_jl.jl"
+
+        # Run Julia script to install FEniCS.jl
+        run_as_user bash -c "export PATH=\"$USER_HOME/.juliaup/bin:\$PATH\" && julia $USER_HOME/install_fenics_jl.jl"
+
+        # Create a simple test script for FEniCS.jl
+        cat > "$USER_HOME/test_fenics_jl.jl" << 'EOF'
+#!/usr/bin/env julia
+"""
+Simple FEniCS.jl test script
+"""
+
+using FEniCS
+
+println("Testing FEniCS.jl...")
+
+# Simple Poisson equation test
+mesh = UnitSquareMesh(4, 4)
+V = FunctionSpace(mesh, "P", 1)
+u = TrialFunction(V)
+v = TestFunction(V)
+
+# Define boundary condition
+u_D = Expression("1 + x[0]*x[0] + 2*x[1]*x[1]", degree=2)
+bc = DirichletBC(V, u_D, "on_boundary")
+
+# Define variational problem
+a = dot(grad(u), grad(v))*dx
+f = Constant(-6.0)
+L = f*v*dx
+
+# Solve
+U = FeFunction(V)
+lvsolve(a, L, U, bc)
+
+println("FEniCS.jl test: SUCCESS - Solved Poisson equation")
+println("Solution computed successfully")
+EOF
+
+        set_ownership "$USER_HOME/test_fenics_jl.jl"
+        chmod +x "$USER_HOME/test_fenics_jl.jl"
+
+        # Clean up installation script
+        rm -f "$USER_HOME/install_fenics_jl.jl"
+
+        log_success "FEniCS.jl package installed"
+    fi
+}
+
+# Setup Julia kernel for JupyterLab
+setup_julia_jupyter_kernel() {
+    if [ "$INSTALL_JULIA" = "true" ] && [ "$INSTALL_JUPYTER_LAB" = "true" ] && [ "$JULIA_JUPYTER_KERNEL" = "true" ]; then
+        log_info "Setting up Julia kernel for JupyterLab..."
+
+        # Create Julia script to install IJulia
+        cat > "$USER_HOME/install_ijulia.jl" << 'EOF'
+using Pkg
+
+# Add IJulia package
+println("Adding IJulia package...")
+Pkg.add("IJulia")
+
+# Install Julia kernel for Jupyter
+println("Installing Julia kernel for Jupyter...")
+using IJulia
+IJulia.installkernel("Julia", "--project=@.")
+
+println("IJulia installation completed!")
+EOF
+
+        set_ownership "$USER_HOME/install_ijulia.jl"
+
+        # Run Julia script to install IJulia
+        run_as_user bash -c "export PATH=\"$USER_HOME/.juliaup/bin:\$PATH\" && julia $USER_HOME/install_ijulia.jl"
+
+        # Update JupyterLab startup script to include Julia kernel path
+        if [ -f "$USER_HOME/start_jupyter.sh" ]; then
+            # Add Julia kernel path to the startup script
+            sed -i '/# Start JupyterLab from the workspace directory/i\
+# Add Julia kernel to Jupyter path\
+export PATH="$HOME/.juliaup/bin:$PATH"\
+' "$USER_HOME/start_jupyter.sh"
+        fi
+
+        # Clean up installation script
+        rm -f "$USER_HOME/install_ijulia.jl"
+
+        log_success "Julia kernel for JupyterLab configured"
+    fi
+}
+
 # Main installation process
 main() {
     log_info "Starting DOLFINx installation..."
@@ -466,6 +621,9 @@ main() {
     log_info "  Install Optional Dependencies: $INSTALL_OPTIONAL_DEPS"
     log_info "  Install Examples: $INSTALL_EXAMPLES"
     log_info "  Enable Development Tools: $ENABLE_DEVELOPMENT_TOOLS"
+    log_info "  Install Julia: $INSTALL_JULIA"
+    log_info "  Julia Channel: $JULIA_CHANNEL"
+    log_info "  Install Julia Jupyter Kernel: $JULIA_JUPYTER_KERNEL"
 
     # Check for existing conda installation
     CONDA_CMD=$(check_conda)
@@ -494,9 +652,24 @@ main() {
     # Create mode switching scripts
     create_mode_scripts
 
+    # Install Julia
+    install_julia
+
+    # Install FEniCS.jl
+    install_fenics_jl
+
+    # Setup Julia kernel for JupyterLab
+    setup_julia_jupyter_kernel
+
     # Final verification
     log_info "Verifying installation..."
     run_as_user bash -c "source $USER_HOME/.dolfinx_env && python -c 'import dolfinx; print(f\"DOLFINx {dolfinx.__version__} installed successfully\")'"
+
+    # Verify Julia installation if enabled
+    if [ "$INSTALL_JULIA" = "true" ]; then
+        run_as_user bash -c "source $USER_HOME/.dolfinx_env && julia -e 'println(\"Julia \", VERSION, \" installed successfully\")'"
+        run_as_user bash -c "source $USER_HOME/.dolfinx_env && julia -e 'using FEniCS; println(\"FEniCS.jl installed successfully\")'" 2>/dev/null || log_warning "FEniCS.jl verification failed"
+    fi
 
     log_success "DOLFINx installation completed successfully!"
     log_info ""
@@ -506,13 +679,23 @@ main() {
     log_info "  - Switch to complex mode: ~/dolfinx-complex-mode"
     log_info "  - Test installation: python ~/dolfinx-examples/test_dolfinx.py"
 
+    if [ "$INSTALL_JULIA" = "true" ]; then
+        log_info "  - Test Julia/FEniCS.jl: julia ~/test_fenics_jl.jl"
+    fi
+
     if [ "$INSTALL_JUPYTER_LAB" = "true" ]; then
         log_info "  - Start JupyterLab: ~/start_jupyter.sh"
         log_info "  - JupyterLab URL: http://localhost:$JUPYTER_PORT"
+        if [ "$INSTALL_JULIA" = "true" ] && [ "$JULIA_JUPYTER_KERNEL" = "true" ]; then
+            log_info "  - Julia kernel available in JupyterLab"
+        fi
     fi
 
     log_info ""
     log_info "Examples available in: ~/dolfinx-examples/"
+    if [ "$INSTALL_JULIA" = "true" ]; then
+        log_info "Julia test script available: ~/test_fenics_jl.jl"
+    fi
 }
 
 # Run main installation

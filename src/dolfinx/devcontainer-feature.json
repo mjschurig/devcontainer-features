@@ -20,7 +20,8 @@
     "dolfinx",
     "petsc",
     "mpi",
-    "hdf5"
+    "hdf5",
+    "julia"
   ],
   "options": {
     "version": {
@@ -107,6 +108,27 @@
       "type": "boolean",
       "default": false,
       "description": "Install development tools (cmake, compilers, etc.) for building from source"
+    },
+    "installJulia": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Julia programming language"
+    },
+    "juliaChannel": {
+      "type": "string",
+      "proposals": [
+        "release",
+        "lts",
+        "beta",
+        "rc"
+      ],
+      "default": "release",
+      "description": "Julia channel to install (release, lts, beta, rc)"
+    },
+    "juliaJupyterKernel": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install Julia kernel for JupyterLab (requires installJulia=true and installJupyterLab=true)"
     }
   },
   "installsAfter": [
