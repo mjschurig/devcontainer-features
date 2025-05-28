@@ -154,7 +154,9 @@ jobs:
           node-version: "18"
 
       - name: Install devcontainer CLI
-        run: npm install -g @devcontainers/cli
+        run: |
+          # Install a recent version of devcontainer CLI (0.7.1+ fixes authentication issues)
+          npm install -g @devcontainers/cli@latest
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -181,12 +183,39 @@ jobs:
 
       - name: Build feature package
         run: |
-          chmod +x scripts/build-feature.sh
-          ./scripts/build-feature.sh ${{ matrix.feature }}
+          if [ -f scripts/build-feature.sh ]; then
+            chmod +x scripts/build-feature.sh
+            ./scripts/build-feature.sh ${{ matrix.feature }}
+          else
+            echo "No build script found, skipping build step"
+          fi
 
       - name: Publish to registry
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Debug information
+          echo "Registry: ${{ env.REGISTRY }}"
+          echo "Namespace: ${{ env.NAMESPACE }}"
+          echo "Feature: ${{ matrix.feature }}"
+          echo "Actor: ${{ github.actor }}"
+
+          # Verify feature directory exists and has required files
+          if [ ! -d "src/${{ matrix.feature }}" ]; then
+            echo "ERROR: Feature directory src/${{ matrix.feature }} does not exist"
+            exit 1
+          fi
+
+          if [ ! -f "src/${{ matrix.feature }}/devcontainer-feature.json" ]; then
+            echo "ERROR: devcontainer-feature.json not found in src/${{ matrix.feature }}"
+            exit 1
+          fi
+
+          echo "Feature metadata:"
+          cat "src/${{ matrix.feature }}/devcontainer-feature.json"
+
           # Use devcontainer CLI to publish the feature
+          # The CLI will use the Docker login from the previous step
           devcontainer features publish \
             --namespace "${{ env.NAMESPACE }}" \
             --registry "${{ env.REGISTRY }}" \
@@ -335,12 +364,12 @@ jobs:
           echo "release_notes_file=$RELEASE_NOTES" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: Dev Container Features ${{ github.ref_name }}
+          name: Dev Container Features ${{ github.ref_name }}
           body_path: ${{ steps.release_notes.outputs.release_notes_file }}
           draft: false
           prerelease: false
