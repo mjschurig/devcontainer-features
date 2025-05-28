@@ -72,7 +72,7 @@
     },
     "enableTrilinos": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "Install Trilinos via candi for advanced linear algebra operations (WARNING: Known compatibility issues - system packages used by default)"
     },
     "trilinosMajorVersion": {
@@ -88,12 +88,12 @@
     },
     "enablePetsc": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "Install PETSc via candi for parallel linear algebra (WARNING: Known SCALAPACK/CMake compatibility issues - system packages used by default)"
     },
     "enableSlepc": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "Install SLEPc via candi for eigenvalue problems (WARNING: Requires candi PETSc - system packages used by default)"
     },
     "enableP4est": {
@@ -108,17 +108,17 @@
     },
     "enableOpencascade": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "Install OpenCASCADE for CAD file support (WARNING: Known compatibility issues with modern systems - use system packages instead)"
     },
     "enableParmetis": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "Install ParMETIS via candi for mesh partitioning (WARNING: Known compatibility issues - system packages used by default)"
     },
     "enableSundials": {
       "type": "boolean",
-      "default": false,
+      "default": true,
       "description": "Install SUNDIALS via candi for ODE/DAE solving (WARNING: Known compatibility issues - system packages used by default)"
     },
     "enableSymengine": {
@@ -196,6 +196,26 @@
       "default": false,
       "description": "Install Boost C++ libraries"
     },
+    "enableGit": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Git version control system via candi"
+    },
+    "enableCmake": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install CMake build system via candi"
+    },
+    "enableNumdiff": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install numdiff numerical comparison tool"
+    },
+    "enableAstyle": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install Astyle code formatter for development"
+    },
     "enableMkl": {
       "type": "boolean",
       "default": false,
@@ -238,9 +258,10 @@
     }
   },
   "dependsOn": {
-    "ghcr.io/devcontainers/features/common-utils": {},
-    "ghcr.io/devcontainers-extra/features/cmake:1": {
-      "version": "3.31.0"
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "configureZshAsDefaultShell": false,
+      "upgradePackages": false
     }
   },
   "containerEnv": {
