@@ -1,0 +1,308 @@
+{
+    "minimal-build": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0"
+            }
+        }
+    },
+    "with-64bit-indices": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "use64BitIndices": true
+                }
+            }
+        }
+    },
+    "with-tests": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "runTests": true
+                }
+            }
+        }
+    },
+    "with-trilinos-complex": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableTrilinos": true,
+                    "trilinosWithComplex": true
+                }
+            }
+        }
+    },
+    "with-superlu-dist": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableSuperluDist": true
+                }
+            }
+        }
+    },
+    "with-adolc": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableAdolc": true
+                }
+            }
+        }
+    },
+    "with-arpack-ng": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableArpackNg": true
+                }
+            }
+        }
+    },
+    "with-assimp": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableAssimp": true
+                }
+            }
+        }
+    },
+    "with-ginkgo": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableGinkgo": true
+                }
+            }
+        }
+    },
+    "with-gmsh": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableGmsh": true
+                }
+            }
+        }
+    },
+    "with-gsl": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableGsl": true
+                }
+            }
+        }
+    },
+    "with-mumps": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableMumps": true
+                }
+            }
+        }
+    },
+    "with-netcdf": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableNetcdf": true
+                }
+            }
+        }
+    },
+    "with-openblas": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableOpenblas": true
+                }
+            }
+        }
+    },
+    "with-scalapack": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableScalapack": true
+                }
+            }
+        }
+    },
+    "with-compression-libs": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableZlib": true,
+                    "enableBzip2": true
+                }
+            }
+        }
+    },
+    "with-boost": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableBoost": true
+                }
+            }
+        }
+    },
+    "with-git": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableGit": true
+                }
+            }
+        }
+    },
+    "with-dev-tools": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableNumdiff": true,
+                    "enableAstyle": true
+                }
+            }
+        }
+    },
+    "with-mkl": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "enableMkl": true
+                }
+            }
+        }
+    },
+    "developer-mode": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "developerMode": true
+                }
+            }
+        }
+    },
+    "no-cleanup": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "instantCleanBuild": false,
+                    "instantCleanSrc": false,
+                    "instantCleanUnpack": false
+                }
+            }
+        }
+    },
+    "native-optimizations": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "nativeOptimizations": true
+                }
+            }
+        }
+    },
+    "full-build": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "deal-ii-candi": {
+                "version": "1.0.0",
+                "options": {
+                    "dealiiVersion": "v9.6.1",
+                    "buildJobs": "2",
+                    "cleanBuild": true,
+                    "nativeOptimizations": true,
+                    "use64BitIndices": true,
+                    "buildExamples": true,
+                    "runTests": false,
+                    "enableTrilinos": true,
+                    "trilinosMajorVersion": "AUTO",
+                    "trilinosWithComplex": true,
+                    "enablePetsc": true,
+                    "enableSlepc": true,
+                    "enableP4est": true,
+                    "enableHdf5": true,
+                    "enableOpencascade": false,
+                    "enableParmetis": false,
+                    "enableSundials": false,
+                    "enableSymengine": true,
+                    "enableSuperluDist": true,
+                    "enableAdolc": true,
+                    "enableArpackNg": true,
+                    "enableAssimp": true,
+                    "enableGinkgo": true,
+                    "enableGmsh": true,
+                    "enableGsl": true,
+                    "enableMumps": true,
+                    "enableNetcdf": true,
+                    "enableOpenblas": true,
+                    "enableScalapack": true,
+                    "enableZlib": true,
+                    "enableBzip2": true,
+                    "enableBoost": true,
+                    "enableGit": true,
+                    "enableCmake": true,
+                    "enableNumdiff": true,
+                    "enableAstyle": true,
+                    "enableMkl": false,
+                    "developerMode": false,
+                    "instantCleanBuild": true,
+                    "instantCleanSrc": true,
+                    "instantCleanUnpack": true
+                }
+            }
+        }
+    }
+}
