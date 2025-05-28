@@ -269,16 +269,25 @@ jobs:
             fi
           done
 
-          echo "Final scenarios matrix: $MATRIX_ENTRIES"
+          # Compact the JSON to single line to avoid GitHub Actions parsing issues
+          MATRIX_COMPACT=$(echo "$MATRIX_ENTRIES" | jq -c .)
+
+          echo "Final scenarios matrix (compact): $MATRIX_COMPACT"
           echo "Has scenarios: $HAS_SCENARIOS"
 
           # Validate JSON format
-          if ! echo "$MATRIX_ENTRIES" | jq empty 2>/dev/null; then
-            echo "ERROR: Invalid JSON format in scenarios matrix: $MATRIX_ENTRIES"
+          if ! echo "$MATRIX_COMPACT" | jq empty 2>/dev/null; then
+            echo "ERROR: Invalid JSON format in scenarios matrix: $MATRIX_COMPACT"
             exit 1
           fi
 
-          echo "scenarios_matrix=$MATRIX_ENTRIES" >> $GITHUB_OUTPUT
+          # Use EOF delimiter to handle special characters properly
+          {
+            echo "scenarios_matrix<<EOF"
+            echo "$MATRIX_COMPACT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
           echo "has_scenarios=$HAS_SCENARIOS" >> $GITHUB_OUTPUT
 
   test-scenarios-execute:

@@ -96,20 +96,62 @@ get_username() {
     fi
 }
 
-# Install system dependencies
+# Detect operating system and package manager
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+        OS_VERSION=$VERSION_ID
+    elif [ -f /etc/redhat-release ]; then
+        OS="centos"
+        OS_VERSION=$(cat /etc/redhat-release | grep -o '[0-9]\+\.[0-9]\+' | head -1)
+    elif [ -f /etc/debian_version ]; then
+        OS="debian"
+        OS_VERSION=$(cat /etc/debian_version)
+    else
+        OS="unknown"
+        OS_VERSION="unknown"
+    fi
+
+    log_info "Detected OS: $OS $OS_VERSION"
+}
+
 install_system_dependencies() {
     log_info "Installing system dependencies..."
 
+    # Detect operating system
+    detect_os
+
+    case "$OS" in
+        "ubuntu"|"debian")
+            install_debian_dependencies
+            ;;
+        "centos"|"rhel"|"fedora")
+            install_redhat_dependencies
+            ;;
+        *)
+            log_warn "Unsupported operating system: $OS"
+            log_warn "Attempting to install with generic approach..."
+            install_generic_dependencies
+            ;;
+    esac
+
+    log_info "System dependencies installed successfully"
+}
+
+install_debian_dependencies() {
+    log_info "Installing dependencies for Debian/Ubuntu..."
+
     # Pre-configure tzdata to avoid interactive prompts
-    echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections
-    echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections
+    if command -v debconf-set-selections >/dev/null 2>&1; then
+        echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections
+        echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections
+        echo 'libc6 libraries/restart-without-asking boolean true' | debconf-set-selections
+        echo 'libssl1.1:amd64 libraries/restart-without-asking boolean true' | debconf-set-selections
 
-    # Pre-configure other packages that might prompt
-    echo 'libc6 libraries/restart-without-asking boolean true' | debconf-set-selections
-    echo 'libssl1.1:amd64 libraries/restart-without-asking boolean true' | debconf-set-selections
-
-    # Reconfigure tzdata non-interactively
-    dpkg-reconfigure -f noninteractive tzdata 2>/dev/null || true
+        # Reconfigure tzdata non-interactively
+        dpkg-reconfigure -f noninteractive tzdata 2>/dev/null || true
+    fi
 
     # Update package lists
     apt-get update
@@ -143,8 +185,86 @@ install_system_dependencies() {
         texlive-latex-extra \
         texlive-fonts-recommended \
         texlive-fonts-extra
+}
 
-    log_info "System dependencies installed successfully"
+install_redhat_dependencies() {
+    log_info "Installing dependencies for CentOS/RHEL/Fedora..."
+
+    # Set timezone non-interactively
+    if [ -f /usr/share/zoneinfo/UTC ]; then
+        ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+        echo "UTC" > /etc/timezone 2>/dev/null || true
+    fi
+
+    # Determine package manager
+    if command -v dnf >/dev/null 2>&1; then
+        PKG_MGR="dnf"
+    elif command -v yum >/dev/null 2>&1; then
+        PKG_MGR="yum"
+    else
+        log_error "No package manager found (yum/dnf)"
+        exit 1
+    fi
+
+    # Enable EPEL repository for CentOS/RHEL
+    if [ "$OS" = "centos" ] || [ "$OS" = "rhel" ]; then
+        $PKG_MGR install -y epel-release || true
+    fi
+
+    # Update package lists
+    $PKG_MGR update -y
+
+    # Install development tools group
+    $PKG_MGR groupinstall -y "Development Tools" || $PKG_MGR install -y gcc gcc-c++ make
+
+    # Install essential build tools and dependencies
+    $PKG_MGR install -y \
+        gcc-gfortran \
+        git \
+        wget \
+        curl \
+        ca-certificates \
+        pkgconfig \
+        libtool \
+        autoconf \
+        automake \
+        openmpi-devel \
+        lapack-devel \
+        blas-devel \
+        boost-devel \
+        zlib-devel \
+        bzip2-devel \
+        python3 \
+        python3-devel \
+        python3-pip \
+        doxygen \
+        graphviz \
+        texlive-latex \
+        texlive-collection-latexextra || true
+
+    # Some packages might not be available, continue anyway
+    log_info "Note: Some optional packages may not be available on $OS $OS_VERSION"
+}
+
+install_generic_dependencies() {
+    log_info "Attempting generic dependency installation..."
+
+    # Try to install basic build tools
+    if command -v apt-get >/dev/null 2>&1; then
+        install_debian_dependencies
+    elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
+        install_redhat_dependencies
+    else
+        log_warn "No supported package manager found"
+        log_warn "Please ensure the following are installed manually:"
+        log_warn "- C/C++ compiler (gcc/g++)"
+        log_warn "- Fortran compiler (gfortran)"
+        log_warn "- Git, wget, curl"
+        log_warn "- Build tools (make, autotools)"
+        log_warn "- MPI development libraries"
+        log_warn "- BLAS/LAPACK libraries"
+        log_warn "- Python 3 with development headers"
+    fi
 }
 
 # Clone and setup candi
@@ -330,6 +450,21 @@ EOF
 install_system_fallbacks() {
     log_info "Installing system packages for better compatibility..."
 
+    case "$OS" in
+        "ubuntu"|"debian")
+            install_debian_fallbacks
+            ;;
+        "centos"|"rhel"|"fedora")
+            install_redhat_fallbacks
+            ;;
+        *)
+            log_warn "System package fallbacks not available for $OS"
+            log_warn "Relying on candi for all packages"
+            ;;
+    esac
+}
+
+install_debian_fallbacks() {
     local packages_to_install=""
 
     # Install system packages for packages with known issues
@@ -358,8 +493,55 @@ install_system_fallbacks() {
     fi
 
     if [ -n "$packages_to_install" ]; then
-        log_info "Installing system fallback packages: $packages_to_install"
+        log_info "Installing Debian/Ubuntu system fallback packages: $packages_to_install"
         DEBIAN_FRONTEND=noninteractive apt-get install -y $packages_to_install || log_warn "Some system packages could not be installed"
+    fi
+}
+
+install_redhat_fallbacks() {
+    local packages_to_install=""
+
+    # Determine package manager
+    if command -v dnf >/dev/null 2>&1; then
+        PKG_MGR="dnf"
+    elif command -v yum >/dev/null 2>&1; then
+        PKG_MGR="yum"
+    else
+        log_warn "No package manager found for Red Hat-based system"
+        return
+    fi
+
+    # Install system packages for packages with known issues
+    # Note: Many scientific packages may not be available on CentOS/RHEL
+    if [ "$ENABLE_TRILINOS" = "true" ]; then
+        packages_to_install="$packages_to_install trilinos-devel"
+    fi
+
+    if [ "$ENABLE_PETSC" = "true" ]; then
+        packages_to_install="$packages_to_install petsc-devel"
+    fi
+
+    if [ "$ENABLE_SLEPC" = "true" ]; then
+        packages_to_install="$packages_to_install slepc-devel"
+    fi
+
+    if [ "$ENABLE_PARMETIS" = "true" ]; then
+        packages_to_install="$packages_to_install parmetis-devel"
+    fi
+
+    if [ "$ENABLE_SUNDIALS" = "true" ]; then
+        packages_to_install="$packages_to_install sundials-devel"
+    fi
+
+    if [ "$ENABLE_OPENCASCADE" = "true" ]; then
+        packages_to_install="$packages_to_install opencascade-devel"
+    fi
+
+    if [ -n "$packages_to_install" ]; then
+        log_info "Installing Red Hat system fallback packages: $packages_to_install"
+        $PKG_MGR install -y $packages_to_install || log_warn "Some system packages could not be installed (this is common on CentOS/RHEL)"
+    else
+        log_info "No system fallback packages needed for current configuration"
     fi
 }
 
@@ -449,9 +631,25 @@ cleanup() {
         rm -rf "/tmp/candi"
     fi
 
-    # Clean package cache
-    apt-get clean
-    rm -rf /var/lib/apt/lists/*
+    # Clean package cache based on OS
+    case "$OS" in
+        "ubuntu"|"debian")
+            if command -v apt-get >/dev/null 2>&1; then
+                apt-get clean
+                rm -rf /var/lib/apt/lists/*
+            fi
+            ;;
+        "centos"|"rhel"|"fedora")
+            if command -v dnf >/dev/null 2>&1; then
+                dnf clean all
+            elif command -v yum >/dev/null 2>&1; then
+                yum clean all
+            fi
+            ;;
+        *)
+            log_info "No package cache cleanup for $OS"
+            ;;
+    esac
 
     # Reset environment variables
     unset DEBIAN_FRONTEND
